@@ -1,8 +1,17 @@
 import sqlite3
 
-# Create tables
+
+DATABASE_PATH = "database.db"
+
+
 def get_connection():
-    return sqlite3.connect("database.db")
+    conn = sqlite3.connect(DATABASE_PATH)
+
+    # Enable foreign key enforcement in SQLite
+    conn.execute("PRAGMA foreign_keys = ON")
+
+    return conn
+
 
 def create_tables():
 
@@ -33,7 +42,6 @@ def create_tables():
     )
     """)
 
-
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS groups (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -42,14 +50,12 @@ def create_tables():
     )
     """)
 
-
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS categories (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL
     )
     """)
-
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS tasks (
@@ -60,6 +66,7 @@ def create_tables():
         priority_id INTEGER NOT NULL,
         created_at TEXT NOT NULL,
         completed_at TEXT,
+        due_date TEXT,
 
         category_id INTEGER,
         group_id INTEGER,
@@ -72,7 +79,7 @@ def create_tables():
 
         FOREIGN KEY(priority_id)
             REFERENCES priorities(id),
-                   
+
         FOREIGN KEY(category_id)
             REFERENCES categories(id),
 
@@ -89,6 +96,7 @@ def create_tables():
 
     conn.commit()
     conn.close()
+
 
 if __name__ == "__main__":
     create_tables()
