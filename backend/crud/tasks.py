@@ -9,9 +9,11 @@ def create_task(task):
         """
         SELECT id
         FROM statuses
+        WHERE workspace_id = ?
         ORDER BY id ASC
         LIMIT 1
-        """
+        """,
+        (task.workspace_id,)
     )
 
     status = cursor.fetchone()
@@ -26,6 +28,7 @@ def create_task(task):
         """
         INSERT INTO tasks 
         (
+            workspace_id,
             title,
             description,
             status_id,
@@ -35,9 +38,10 @@ def create_task(task):
             group_id,
             due_date
         )
-        VALUES (?, ?, ?, ?, datetime('now'), ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, datetime('now'), ?, ?, ?)
         """,
         (
+            task.workspace_id,
             task.title,
             task.description,
             status_id,
@@ -56,7 +60,13 @@ def create_task(task):
     }
 
 # Read
-def get_all_tasks(status_id=None, priority_id=None, category_id=None, group_id=None):
+def get_all_tasks(
+    workspace_id,
+    status_id=None,
+    priority_id=None,
+    category_id=None,
+    group_id=None
+):
 
     conn = get_connection()
     cursor = conn.cursor()
@@ -73,7 +83,9 @@ def get_all_tasks(status_id=None, priority_id=None, category_id=None, group_id=N
             tasks.created_at,
             tasks.completed_at,
             tasks.due_date,
+            tasks.category_id,
             categories.name AS category,
+            tasks.group_id,
             groups.name AS group_name
 
         FROM tasks
@@ -89,10 +101,15 @@ def get_all_tasks(status_id=None, priority_id=None, category_id=None, group_id=N
 
         LEFT JOIN priorities
             ON tasks.priority_id = priorities.id
-        """
+    """
 
-    conditions = []
-    values = []
+    conditions = [
+        "tasks.workspace_id = ?"
+    ]
+
+    values = [
+        workspace_id
+    ]
 
 
     if status_id:
@@ -111,8 +128,8 @@ def get_all_tasks(status_id=None, priority_id=None, category_id=None, group_id=N
         conditions.append("tasks.group_id = ?")
         values.append(group_id)
 
-    if conditions:
-        query += " WHERE " + " AND ".join(conditions)
+
+    query += " WHERE " + " AND ".join(conditions)
 
 
     cursor.execute(
@@ -126,20 +143,29 @@ def get_all_tasks(status_id=None, priority_id=None, category_id=None, group_id=N
 
 
     return [
-    {
-        "id": row[0],
-        "title": row[1],
-        "description": row[2],
-        "status": row[4],
-        "priority": row[6],
-        "created_at": row[7],
-        "completed_at": row[8],
-        "due_date": row[9],
-        "category": row[10],
-        "group": row[11]
-    }
-    for row in rows
-]
+        {
+            "id": row[0],
+            "title": row[1],
+            "description": row[2],
+
+            "status_id": row[3],
+            "status": row[4],
+
+            "priority_id": row[5],
+            "priority": row[6],
+
+            "created_at": row[7],
+            "completed_at": row[8],
+            "due_date": row[9],
+
+            "category_id": row[10],
+            "category": row[11],
+
+            "group_id": row[12],
+            "group": row[13]
+        }
+        for row in rows
+    ]
 
 def get_task_by_id(task_id):
 
@@ -213,6 +239,24 @@ def update_task(task_id, task_update):
     conn = get_connection()
     cursor = conn.cursor()
 
+    # Get the workspace this task belongs to
+    cursor.execute(
+        """
+        SELECT workspace_id
+        FROM tasks
+        WHERE id = ?
+        """,
+        (task_id,)
+    )
+
+    task = cursor.fetchone()
+
+    if task is None:
+        conn.close()
+        return False
+
+    workspace_id = task[0]
+
     fields = []
     values = []
 
@@ -231,15 +275,19 @@ def update_task(task_id, task_update):
             SELECT is_completed, is_cancelled
             FROM statuses
             WHERE id = ?
+            AND workspace_id = ?
             """,
-            (task_update.status_id,)
+            (
+                task_update.status_id,
+                workspace_id
+            )
         )
 
         status = cursor.fetchone()
 
         if status is None:
             conn.close()
-            raise ValueError("Status not found")
+            raise ValueError("Status not found for this workspace")
 
         is_completed = status[0]
 
@@ -271,16 +319,13 @@ def update_task(task_id, task_update):
         conn.close()
         return False
 
-
     values.append(task_id)
-
 
     query = f"""
         UPDATE tasks
         SET {", ".join(fields)}
         WHERE id = ?
     """
-
 
     cursor.execute(
         query,
@@ -316,15 +361,20 @@ def delete_task(task_id):
 
     return deleted
 
-# get statuses
-def get_all_statuses():
+# ========================================
+# Workspace configuration
+# ========================================
+
+def get_all_statuses(workspace_id):
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT id, name
+        SELECT id, name, is_completed, is_cancelled
         FROM statuses
-    """)
+        WHERE workspace_id = ?
+        ORDER BY id
+    """, (workspace_id,))
 
     rows = cursor.fetchall()
 
@@ -333,20 +383,24 @@ def get_all_statuses():
     return [
         {
             "id": row[0],
-            "name": row[1]
+            "name": row[1],
+            "is_completed": bool(row[2]),
+            "is_cancelled": bool(row[3])
         }
         for row in rows
     ]
 
-# get priorities
-def get_all_priorities():
+
+def get_all_priorities(workspace_id):
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute("""
         SELECT id, name
         FROM priorities
-    """)
+        WHERE workspace_id = ?
+        ORDER BY id
+    """, (workspace_id,))
 
     rows = cursor.fetchall()
 
@@ -360,15 +414,17 @@ def get_all_priorities():
         for row in rows
     ]
 
-# get categories
-def get_all_categories():
+
+def get_all_categories(workspace_id):
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute("""
         SELECT id, name
         FROM categories
-    """)
+        WHERE workspace_id = ?
+        ORDER BY id
+    """, (workspace_id,))
 
     rows = cursor.fetchall()
 
@@ -382,14 +438,39 @@ def get_all_categories():
         for row in rows
     ]
 
-# get groups
-def get_all_groups():
+
+def get_all_groups(workspace_id):
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT id, name
+        SELECT id, name, type
         FROM groups
+        WHERE workspace_id = ?
+        ORDER BY id
+    """, (workspace_id,))
+
+    rows = cursor.fetchall()
+
+    conn.close()
+
+    return [
+        {
+            "id": row[0],
+            "name": row[1],
+            "type": row[2]
+        }
+        for row in rows
+    ]
+
+def get_all_workspaces():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT id, name, type
+        FROM workspaces
+        ORDER BY id
     """)
 
     rows = cursor.fetchall()
@@ -399,7 +480,8 @@ def get_all_groups():
     return [
         {
             "id": row[0],
-            "name": row[1]
+            "name": row[1],
+            "type": row[2]
         }
         for row in rows
     ]

@@ -1,19 +1,24 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getTasks } from "../services/TaskServices";
+import WorkspaceSelector from "../components/WorkspaceSelector";
 
-function Dashboard() {
+function Dashboard({ workspaceId, setWorkspaceId }) {
 
     const [tasks, setTasks] = useState([]);
     const [error, setError] = useState(null);
 
     useEffect(() => {
 
+        if (!workspaceId) {
+            return;
+        }
+
         async function loadTasks() {
 
             try {
 
-                const data = await getTasks({});
+                const data = await getTasks(workspaceId, {});
 
                 setTasks(data);
 
@@ -26,7 +31,7 @@ function Dashboard() {
 
         loadTasks();
 
-    }, []);
+    }, [workspaceId, {}]);
 
     if (error) {
         return <p>Error: {error}</p>;
@@ -73,6 +78,11 @@ function Dashboard() {
                     </p>
 
                 </div>
+
+                <WorkspaceSelector
+                    workspaceId={workspaceId}
+                    setWorkspaceId={setWorkspaceId}
+                />
 
                 <Link
                     to="/tasks/create"

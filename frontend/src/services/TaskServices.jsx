@@ -1,7 +1,9 @@
 const API_URL = import.meta.env.VITE_API_URL;
 
-export async function getTasks(filters = {}) {
+export async function getTasks(workspace_id, filters = {}) {
     const queryParams = new URLSearchParams();
+
+    queryParams.append("workspace_id", workspace_id);
 
     Object.entries(filters).forEach(([key, value]) => {
         if (value !== "") {

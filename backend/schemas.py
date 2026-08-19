@@ -4,6 +4,7 @@ from enum import Enum
 from datetime import datetime
 
 class Task(BaseModel):
+    workspace_id: int
     title: str
     description: str
     category_id: int
@@ -31,3 +32,17 @@ class TaskResponse(BaseModel):
     category: Optional[str] = None
     group: Optional[str] = None
     due_date: Optional[str] = None
+
+class ConfigCreate(BaseModel):
+    name: str
+
+
+class GroupCreate(BaseModel):
+    name: str
+    type: str
+
+
+class StatusCreate(BaseModel):
+    name: str
+    is_completed: bool = False
+    is_cancelled: bool = False

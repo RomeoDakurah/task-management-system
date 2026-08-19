@@ -7,7 +7,7 @@ import {
 } from "../services/ConfigServices";
 import { createTask } from "../services/TaskServices";
 
-function CreateTask({ onTaskCreated }) {
+function CreateTask({ onTaskCreated, workspaceId }) {
     const [priorities, setPriorities] = useState([]);
     const [categories, setCategories] = useState([]);
     const [groups, setGroups] = useState([]);
@@ -19,7 +19,7 @@ function CreateTask({ onTaskCreated }) {
         category_id: "",
         group_id: "",
         priority_id: "",
-        due_date: "" || null
+        due_date: ""
     });
 
     const [error, setError] = useState(null);
@@ -33,9 +33,9 @@ function CreateTask({ onTaskCreated }) {
                     categoryData,
                     groupData
                 ] = await Promise.all([
-                    getPriorities(),
-                    getCategories(),
-                    getGroups()
+                    getPriorities(workspaceId),
+                    getCategories(workspaceId),
+                    getGroups(workspaceId)
                 ]);
 
                 setPriorities(priorityData);
@@ -47,7 +47,7 @@ function CreateTask({ onTaskCreated }) {
         }
 
         loadOptions();
-    }, []);
+    }, [workspaceId]);
 
     function handleChange(event) {
         const { name, value } = event.target;
@@ -66,12 +66,13 @@ function CreateTask({ onTaskCreated }) {
 
         try {
             await createTask({
+                workspace_id: Number(workspaceId),
                 title: form.title,
                 description: form.description,
                 category_id: Number(form.category_id),
                 group_id: Number(form.group_id),
                 priority_id: Number(form.priority_id),
-                due_date: form.due_date
+                due_date: form.due_date || null
             });
 
             setForm({
@@ -264,7 +265,7 @@ function CreateTask({ onTaskCreated }) {
                                     id="hidden-date-picker"
                                     type="datetime-local"
                                     name="due_date"
-                                    value={form.due_date}
+                                    value={form.due_date ?? ""}
                                     onChange={handleChange}
                                     className="hidden-date-input"
                                 />

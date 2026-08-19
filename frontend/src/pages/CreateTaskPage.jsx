@@ -1,6 +1,6 @@
 import CreateTask from "../components/CreateTask";
 
-function CreateTaskPage() {
+function CreateTaskPage({ workspaceId }) {
 
     return (
         <div>
@@ -19,7 +19,7 @@ function CreateTaskPage() {
 
             </div>
 
-            <CreateTask />
+            <CreateTask workspaceId={workspaceId}/>
 
         </div>
     );

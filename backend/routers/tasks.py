@@ -14,7 +14,8 @@ from crud.tasks import (
     get_all_statuses,
     get_all_priorities,
     get_all_categories,
-    get_all_groups
+    get_all_groups,
+    get_all_workspaces
 )
 
 router = APIRouter()
@@ -22,6 +23,7 @@ router = APIRouter()
 # Read
 @router.get("/tasks", response_model=list[TaskResponse])
 def get_tasks(
+    workspace_id: Optional[int] = None,
     status_id: Optional[int] = None,
     priority_id: Optional[int] = None,
     category_id: Optional[int] = None,
@@ -29,6 +31,7 @@ def get_tasks(
 ):
     
     return get_all_tasks(
+        workspace_id,
         status_id, 
         priority_id, 
         category_id, 
@@ -98,21 +101,25 @@ def remove_task(task_id: int):
     }
 
 # status
-@router.get("/statuses")
-def get_statuses():
-    return get_all_statuses()
+@router.get("/workspaces/{workspace_id}/statuses")
+def get_statuses(workspace_id: int):
+    return get_all_statuses(workspace_id)
 
 # priorities
-@router.get("/priorities")
-def get_priorities():
-    return get_all_priorities()
+@router.get("/workspaces/{workspace_id}/priorities")
+def get_priorities(workspace_id: int):
+    return get_all_priorities(workspace_id)
 
 # categories
-@router.get("/categories")
-def get_categories():
-    return get_all_categories()
+@router.get("/workspaces/{workspace_id}/categories")
+def get_categories(workspace_id: int):
+    return get_all_categories(workspace_id)
 
 # groups
-@router.get("/groups")
-def get_groups():
-    return get_all_groups()
+@router.get("/workspaces/{workspace_id}/groups")
+def get_groups(workspace_id: int):
+    return get_all_groups(workspace_id)
+
+@router.get("/workspaces")
+def get_workspaces():
+    return get_all_workspaces()

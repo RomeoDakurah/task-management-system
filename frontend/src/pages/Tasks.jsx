@@ -1,11 +1,23 @@
 import { useEffect, useState } from "react";
 import { getTasks, deleteTask } from "../services/TaskServices";
-import TaskCard from "../components/taskCard";
+import TaskCard from "../components/taskCard.jsx";
 import TaskFilters from "../components/TaskFilters";
+import WorkspaceSelector from "../components/WorkspaceSelector";
+import {
+    getStatuses,
+    getPriorities,
+    getCategories,
+    getGroups
+} from "../services/ConfigServices";
 
-function Tasks() {
+
+function Tasks({ workspaceId, setWorkspaceId }) {
 
     const [tasks, setTasks] = useState([]);
+    const [statuses, setStatuses] = useState([]);
+    const [priorities, setPriorities] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [groups, setGroups] = useState([]);
     const [error, setError] = useState(null);
 
     const [filters, setFilters] = useState({
@@ -15,15 +27,58 @@ function Tasks() {
         group_id: ""
     });
 
+
+    // ========================================
+    // Load tasks when workspace or filters change
+    // ========================================
+
     useEffect(() => {
+
+        if (!workspaceId) {
+            setTasks([]);
+            return;
+        }
+
         fetchTasks();
-    }, [filters]);
+
+    }, [workspaceId, filters]);
+
+
+    // ========================================
+    // Load workspace statuses
+    // ========================================
+
+    useEffect(() => {
+
+        if (!workspaceId) {
+            setStatuses([]);
+            setPriorities([]);
+            setCategories([]);
+            setGroups([]);
+            return;
+        }
+    
+        fetchStatuses();
+        fetchConfiguration();
+    
+    }, [workspaceId]);
+
+
+    // ========================================
+    // Fetch tasks
+    // ========================================
 
     async function fetchTasks() {
 
         try {
 
-            const data = await getTasks(filters);
+            setError(null);
+
+            const data =
+                await getTasks(
+                    workspaceId,
+                    filters
+                );
 
             setTasks(data);
 
@@ -34,15 +89,82 @@ function Tasks() {
         }
     }
 
-    async function handleStatusChange() {
-        await fetchTasks();
+
+    // ========================================
+    // Fetch statuses
+    // ========================================
+
+    async function fetchStatuses() {
+
+        try {
+
+            const data =
+                await getStatuses(
+                    workspaceId
+                );
+
+            setStatuses(data);
+
+        } catch (error) {
+
+            setError(error.message);
+
+        }
     }
+
+    // ========================================
+    // Fetch configuration data (priorities, categories, groups)
+    // ========================================
+
+    async function fetchConfiguration() {
+
+        try {
+    
+            const [
+                priorityData,
+                categoryData,
+                groupData
+            ] = await Promise.all([
+                getPriorities(workspaceId),
+                getCategories(workspaceId),
+                getGroups(workspaceId)
+            ]);
+    
+            setPriorities(priorityData);
+            setCategories(categoryData);
+            setGroups(groupData);
+    
+        } catch (error) {
+    
+            setError(error.message);
+    
+        }
+    }
+
+    // ========================================
+    // Refresh after status update
+    // ========================================
+
+    async function handleTaskUpdated() {
+
+        await fetchTasks();
+    
+        const statusData = await getStatuses(workspaceId);
+    
+        setStatuses(statusData);
+    }
+
+
+    // ========================================
+    // Delete task
+    // ========================================
 
     async function handleDelete(taskId) {
 
-        const confirmed = window.confirm(
-            "Are you sure you want to delete this task?"
-        );
+        const confirmed =
+            window.confirm(
+                "Are you sure you want to delete this task?"
+            );
 
         if (!confirmed) {
             return;
@@ -65,15 +187,6 @@ function Tasks() {
         }
     }
 
-    function clearFilters() {
-
-        setFilters({
-            status_id: "",
-            priority_id: "",
-            category_id: "",
-            group_id: ""
-        });
-    }
 
     const hasFilters =
         filters.status_id ||
@@ -81,8 +194,13 @@ function Tasks() {
         filters.category_id ||
         filters.group_id;
 
+
     if (error) {
-        return <p>Error: {error}</p>;
+        return (
+            <p>
+                Error: {error}
+            </p>
+        );
     }
 
     return (
@@ -105,7 +223,13 @@ function Tasks() {
 
                 </div>
 
+                <WorkspaceSelector
+                    workspaceId={workspaceId}
+                    setWorkspaceId={setWorkspaceId}
+                />
+
             </div>
+
 
             {/* Filters */}
 
@@ -114,18 +238,11 @@ function Tasks() {
                 <TaskFilters
                     filters={filters}
                     setFilters={setFilters}
+                    workspaceId={workspaceId}
                 />
 
-                {hasFilters && (
-                    <button
-                        className="clear-filters-button"
-                        onClick={clearFilters}
-                    >
-                        Clear filters
-                    </button>
-                )}
-
             </div>
+
 
             {/* Task count */}
 
@@ -134,11 +251,14 @@ function Tasks() {
                 <span className="task-count">
 
                     {tasks.length}{" "}
-                    {tasks.length === 1 ? "task" : "tasks"}
+                    {tasks.length === 1
+                        ? "task"
+                        : "tasks"}
 
                 </span>
 
             </div>
+
 
             {/* Task list */}
 
@@ -156,26 +276,15 @@ function Tasks() {
 
                     {hasFilters ? (
 
-                        <>
-                            <p>
-                                No tasks match your current filters.
-                            </p>
-
-                            <button
-                                className="secondary-button"
-                                onClick={clearFilters}
-                            >
-                                Clear filters
-                            </button>
-                        </>
+                        <p>
+                            No tasks match your current filters.
+                        </p>
 
                     ) : (
 
-                        <>
-                            <p>
-                                You don't have any tasks yet.
-                            </p>
-                        </>
+                        <p>
+                            You don't have any tasks yet.
+                        </p>
 
                     )}
 
@@ -190,8 +299,9 @@ function Tasks() {
                         <TaskCard
                             key={task.id}
                             task={task}
+                            statuses={statuses}
                             onDelete={handleDelete}
-                            onStatusChange={handleStatusChange}
+                            onTaskUpdated={handleTaskUpdated}
                         />
 
                     ))}
@@ -203,5 +313,6 @@ function Tasks() {
         </div>
     );
 }
+
 
 export default Tasks;

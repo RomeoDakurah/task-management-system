@@ -8,7 +8,7 @@ import {
 } from "../services/ConfigServices";
 import { updateTask } from "../services/TaskServices";
 
-function EditTask() {
+function EditTask({ workspaceId }) {
     const { taskId } = useParams();
     const location = useLocation();
     const navigate = useNavigate();
@@ -36,16 +36,25 @@ function EditTask() {
     useEffect(() => {
         async function loadData() {
             try {
+
+                if (!workspaceId) {
+                    throw new Error("Workspace was not provided");
+                }
+    
+                if (!task) {
+                    throw new Error("Task data was not provided");
+                }
+
                 const [
                     statusData,
                     priorityData,
                     categoryData,
                     groupData
                 ] = await Promise.all([
-                    getStatuses(),
-                    getPriorities(),
-                    getCategories(),
-                    getGroups()
+                    getStatuses(workspaceId),
+                    getPriorities(workspaceId),
+                    getCategories(workspaceId),
+                    getGroups(workspaceId)
                 ]);
 
                 setStatuses(statusData);
@@ -94,7 +103,7 @@ function EditTask() {
         }
 
         loadData();
-    }, [task]);
+    }, [task, workspaceId]);
 
     function handleChange(event) {
         const { name, value } = event.target;

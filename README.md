@@ -2,11 +2,9 @@
 
 A configurable full-stack task management application built with **React**, **FastAPI**, and **SQLite**.
 
-The application is designed around a flexible task-management architecture that can support different use cases such as personal task management, business operations, municipal services, education, IT help desks, and project management without requiring a separate application for each use case.
+The application is designed around a flexible task-management architecture that can support different workflows such as personal task management, business operations, municipal services, education, IT help desks, and project management without requiring a separate application for each use case.
 
-The current version provides task creation, editing, filtering, status management, priorities, categories, groups, due dates, deletion, and a dashboard for viewing task activity.
-
-The long-term goal is to evolve the application into a configurable, multi-workspace task management platform that can be deployed to Azure and support different configurations and users.
+The system is being developed incrementally, with an emphasis on understanding and implementing the underlying architecture rather than relying on hardcoded workflows.
 
 ---
 
@@ -14,82 +12,203 @@ The long-term goal is to evolve the application into a configurable, multi-works
 
 ## Task Management
 
-- Create tasks
-- Edit tasks
-- Delete tasks
-- View task information
-- Assign categories
-- Assign groups
-- Assign priorities
-- Assign statuses
-- Set optional due dates
-- Clear due dates
-- Track completion
-- Track cancellation
+* Create tasks
+* Edit tasks
+* Delete tasks
+* View task information
+* Assign categories
+* Assign groups
+* Assign priorities
+* Assign statuses
+* Set optional due dates
+* Clear due dates
+* Track completion
+* Track cancellation
+* Automatically record completion timestamps
 
-## Task Statuses
+## Workspaces
 
-Statuses are stored in the database rather than hardcoded into the application.
+The application now supports multiple workspaces.
 
-The current configuration includes:
+Each workspace maintains its own configuration and tasks.
 
-| ID | Status | Is Completed | Is Cancelled |
-|---|---|---:|---:|
-| 1 | Open | 0 | 0 |
-| 2 | In Progress | 0 | 0 |
-| 3 | Completed | 1 | 0 |
-| 4 | Cancelled | 0 | 1 |
+Examples include:
 
-The `is_completed` and `is_cancelled` fields allow the application to distinguish the meaning of a status without hardcoding specific status names into the task logic.
+* Personal
+* Business Operations
+* Municipal Services
 
-For example, changing a task to a status where `is_completed = 1` automatically records a completion timestamp.
+The selected workspace determines which configuration options are available throughout the application.
 
-This design also allows future configurations to define their own workflows.
+Workspace-specific configuration includes:
 
-## Filtering
+* Statuses
+* Priorities
+* Categories
+* Groups
 
-Tasks can be filtered by:
+This allows the same task-management system to support different workflows without hardcoding configuration into the frontend or backend.
 
-- Status
-- Priority
-- Category
-- Group
+---
 
-The task list also includes:
+# Workspace Configuration
 
-- Task count
-- Clear filters functionality
-- Empty states when no tasks match the current filters
+Workspace configuration can be managed through the **Workspace Settings** interface.
 
-## Dashboard
+Users can create, edit, and delete:
+
+* Statuses
+* Priorities
+* Categories
+* Groups
+
+Configuration is associated with the selected workspace.
+
+For example, a Personal workspace might use:
+
+```text
+Statuses
+- Open
+- In Progress
+- Completed
+- Cancelled
+
+Priorities
+- Low
+- Medium
+- High
+- Urgent
+
+Categories
+- Groceries
+- Chores
+- Projects
+- Personal
+```
+
+while a Municipal Services workspace could use an entirely different workflow.
+
+The application does not require these names to be hardcoded into task logic.
+
+---
+
+# Task Statuses
+
+Statuses are stored in the database rather than being hardcoded into the application.
+
+Each status contains metadata describing its behavior:
+
+```text
+is_completed
+is_cancelled
+```
+
+For example:
+
+```text
+Completed
+is_completed = 1
+is_cancelled = 0
+```
+
+and:
+
+```text
+Cancelled
+is_completed = 0
+is_cancelled = 1
+```
+
+The frontend dynamically identifies which status represents completion and cancellation for the current workspace.
+
+This means the application does not depend on a hardcoded status ID such as:
+
+```text
+status_id = 3
+```
+
+or a hardcoded status name such as:
+
+```text
+"Completed"
+```
+
+Instead, the workspace configuration determines the behavior.
+
+When a task is moved to a status marked `is_completed`, the backend automatically records a completion timestamp.
+
+When a task moves away from a completed status, the completion timestamp can be cleared.
+
+The frontend also uses the configured status metadata to:
+
+* Display the Complete button
+* Display the Cancel button
+* Hide those buttons when appropriate
+* Apply completed/cancelled visual states
+* Apply task strikethrough styling
+
+---
+
+# Task Filtering
+
+Tasks can be filtered by workspace-specific configuration.
+
+Available filters include:
+
+* Status
+* Priority
+* Category
+* Group
+
+The filtering interface dynamically loads configuration for the currently selected workspace.
+
+The task list also provides:
+
+* Task count
+* Clear filters
+* Empty states
+* Workspace-specific filtering
+
+---
+
+# Dashboard
 
 The dashboard currently provides:
 
-- Total task count
-- Open task count
-- In-progress task count
-- Completed task count
-- Recent tasks
-- Task status distribution
-- Quick access to create tasks
-- Quick access to the full task list
+* Total task count
+* Open task count
+* In-progress task count
+* Completed task count
+* Recent tasks
+* Task status information
+* Quick access to create tasks
+* Quick access to the full task list
 
-## User Interface
+Dashboard functionality is being developed alongside the underlying workspace architecture.
+
+---
+
+# User Interface
 
 The frontend includes:
 
-- Responsive layout
-- Sidebar navigation
-- Dashboard
-- Task grid
-- Task cards
-- Create Task form
-- Edit Task form
-- Filtering controls
-- Status and priority badges
-- Due date display
-- Empty states
-- Interactive buttons and navigation
+* Responsive layout
+* Sidebar navigation
+* Dashboard
+* Workspace selector
+* Task grid
+* Task cards
+* Create Task form
+* Edit Task form
+* Workspace Settings
+* Filtering controls
+* Status badges
+* Priority badges
+* Due date display
+* Empty states
+* Interactive task actions
+
+Task actions such as Complete and Cancel are dynamically based on the configuration of the selected workspace.
 
 ---
 
@@ -97,27 +216,37 @@ The frontend includes:
 
 The application consists of two main parts:
 
-    Frontend
-    React + Vite
-          |
-          | REST API
-          v
-    Backend
-    FastAPI
-          |
-          v
-    SQLite Database
+```text
+Frontend
+React + Vite
+      |
+      | REST API
+      v
+Backend
+FastAPI
+      |
+      v
+SQLite Database
+```
 
-The frontend is responsible for the user interface and communicating with the backend API.
+The frontend is responsible for:
+
+* User interface
+* Application state
+* Workspace selection
+* Configuration management UI
+* Task interaction
+* API communication
 
 The backend handles:
 
-- API routes
-- Validation
-- Database access
-- Task CRUD operations
-- Status logic
-- Configuration data
+* API routes
+* Request validation
+* Database access
+* Task CRUD operations
+* Status behavior
+* Workspace-specific configuration
+* Database relationships
 
 The database stores the persistent application data.
 
@@ -127,86 +256,95 @@ The database stores the persistent application data.
 
 ## Frontend
 
-- React
-- Vite
-- React Router
-- JavaScript
-- CSS
+* React
+* Vite
+* React Router
+* JavaScript
+* CSS
 
 ## Backend
 
-- Python
-- FastAPI
-- Pydantic
-- Uvicorn
+* Python
+* FastAPI
+* Pydantic
+* Uvicorn
 
 ## Database
 
-- SQLite
-- SQL
-- Relational database design
-- Primary keys
-- Foreign keys
-- Lookup/configuration tables
+* SQLite
+* SQL
+* Relational database design
+* Primary keys
+* Foreign keys
+* Lookup/configuration tables
 
 ## Development Tools
 
-- Git
-- GitHub
-- VS Code
-- REST APIs
-- HTTP/JSON
+* Git
+* GitHub
+* VS Code
+* REST APIs
+* HTTP/JSON
 
-## Planned Deployment
+## Planned Production Stack
 
-- Azure
-- Azure Static Web Apps or equivalent frontend hosting
-- Azure App Service for the FastAPI backend
-- PostgreSQL for production database storage
+* Azure
+* Azure Static Web Apps or equivalent frontend hosting
+* Azure App Service for the FastAPI backend
+* PostgreSQL for production database storage
 
 ---
 
 # Project Structure
 
-    task-management-system/
-    │
-    ├── backend/
-    │   ├── crud/
-    │   │   └── tasks.py
-    │   │
-    │   ├── routers/
-    │   │
-    │   ├── schemas/
-    │   │
-    │   ├── database.py
-    │   ├── main.py
-    │   └── ...
-    │
-    ├── frontend/
-    │   ├── src/
-    │   │   ├── components/
-    │   │   │   ├── TaskCard.jsx
-    │   │   │   ├── TaskFilters.jsx
-    │   │   │   ├── CreateTask.jsx
-    │   │   │   └── ...
-    │   │   │
-    │   │   ├── pages/
-    │   │   │   ├── Dashboard.jsx
-    │   │   │   ├── Tasks.jsx
-    │   │   │   ├── CreateTaskPage.jsx
-    │   │   │   └── EditTask.jsx
-    │   │   │
-    │   │   ├── services/
-    │   │   │   ├── TaskServices.js
-    │   │   │   └── ConfigServices.js
-    │   │   │
-    │   │   ├── App.jsx
-    │   │   └── ...
-    │   │
-    │   ├── package.json
-    │   └── ...
-    │
-    └── README.md
+```text
+task-management-system/
+│
+├── backend/
+│   ├── crud/
+│   │   ├── tasks.py
+│   │   └── ...
+│   │
+│   ├── routers/
+│   │   ├── tasks.py
+│   │   └── ...
+│   │
+│   ├── schemas/
+│   │   └── ...
+│   │
+│   ├── database.py
+│   ├── main.py
+│   └── ...
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── TaskCard.jsx
+│   │   │   ├── TaskFilters.jsx
+│   │   │   ├── WorkspaceSelector.jsx
+│   │   │   └── ...
+│   │   │
+│   │   ├── pages/
+│   │   │   ├── Dashboard.jsx
+│   │   │   ├── Tasks.jsx
+│   │   │   ├── WorkspaceSettings.jsx
+│   │   │   ├── CreateTaskPage.jsx
+│   │   │   ├── EditTask.jsx
+│   │   │   └── ...
+│   │   │
+│   │   ├── services/
+│   │   │   ├── TaskServices.jsx
+│   │   │   ├── ConfigServices.jsx
+│   │   │   └── ...
+│   │   │
+│   │   ├── App.jsx
+│   │   └── ...
+│   │
+│   ├── package.json
+│   └── ...
+│
+└── README.md
+```
 
 ---
 
@@ -214,61 +352,110 @@ The database stores the persistent application data.
 
 The application uses a relational database design rather than storing configuration values directly inside task records.
 
-The task table references configuration tables using foreign keys.
+Tasks reference configuration tables using foreign keys.
 
 Conceptually:
 
-                    ┌──────────────┐
-                    │  statuses    │
-                    └──────┬───────┘
-                           │
-                           │
-    ┌──────────────┐     ┌─▼─────────┐     ┌──────────────┐
-    │ categories   │────▶│   tasks   │◀────│  priorities  │
-    └──────────────┘     └────┬──────┘     └──────────────┘
+```text
+                       ┌──────────────┐
+                       │  workspaces  │
+                       └──────┬───────┘
                               │
-                              │
-                       ┌──────▼───────┐
-                       │    groups    │
-                       └──────────────┘
+             ┌────────────────┼────────────────┐
+             │                │                │
+             v                v                v
+       ┌──────────┐     ┌──────────┐     ┌──────────┐
+       │ statuses │     │priorities│     │categories│
+       └────┬─────┘     └────┬─────┘     └────┬─────┘
+            │                │                │
+            └────────────────┼────────────────┘
+                             │
+                       ┌─────▼──────┐
+                       │   tasks    │
+                       └─────┬──────┘
+                             │
+                       ┌─────▼──────┐
+                       │   groups   │
+                       └────────────┘
+```
 
-This approach provides several advantages.
+The workspace provides the boundary for configuration and task data.
 
 Instead of storing:
 
-    status = "Completed"
+```text
+status = "Completed"
+```
 
-directly inside every task, the task stores:
+directly inside a task, the task stores a status reference:
 
-    status_id = 3
+```text
+status_id = 20
+```
 
-and the status configuration defines what that status means.
+The status record then defines:
 
-This makes the application easier to extend and configure.
+```text
+name = "Completed"
+is_completed = 1
+is_cancelled = 0
+```
+
+This allows the same task-management logic to operate across different workflows.
 
 ---
 
-# Status Logic
+# Workspace Architecture
 
-Statuses contain metadata describing their behavior.
+A workspace represents a particular environment or workflow configuration.
 
 For example:
 
-    Completed
-    is_completed = 1
-    is_cancelled = 0
+```text
+Personal
+Business Operations
+Municipal Services
+```
 
-When a task is updated to a completed status, the backend automatically sets:
+Each workspace can have its own:
 
-    completed_at = current timestamp
+```text
+Tasks
+Statuses
+Priorities
+Categories
+Groups
+```
 
-If a task is changed back to a non-completed status, the completion timestamp can be cleared.
+The frontend uses the selected workspace to retrieve the appropriate configuration.
 
-Cancelled tasks are handled separately using:
+For example:
 
-    is_cancelled = 1
+```text
+Personal Workspace
+    |
+    ├── Open
+    ├── In Progress
+    ├── Completed
+    └── Cancelled
+```
 
-This means the application does not need to assume that a specific string such as `"Completed"` or `"Cancelled"` is the only possible status.
+Another workspace can use:
+
+```text
+Municipal Services
+    |
+    ├── Submitted
+    ├── Under Review
+    ├── Assigned
+    ├── In Progress
+    ├── Resolved
+    └── Cancelled
+```
+
+The underlying task-management code remains the same.
+
+Only the workspace configuration changes.
 
 ---
 
@@ -276,21 +463,37 @@ This means the application does not need to assume that a specific string such a
 
 The React frontend communicates with FastAPI through REST endpoints.
 
-The current application includes task operations such as:
+Task operations include:
 
-    GET     /tasks
-    POST    /tasks
-    PATCH   /tasks/{task_id}
-    DELETE  /tasks/{task_id}
+```text
+GET     /tasks
+POST    /tasks
+PATCH   /tasks/{task_id}
+DELETE  /tasks/{task_id}
+```
 
-Configuration endpoints provide data such as:
+Workspace-specific configuration is accessed through workspace-aware endpoints such as:
 
-    GET /statuses
-    GET /priorities
-    GET /categories
-    GET /groups
+```text
+/workspaces/{workspace_id}/...
+```
 
-The frontend uses these endpoints to populate dropdowns and filtering controls.
+Configuration operations include retrieving, creating, updating, and deleting:
+
+```text
+Statuses
+Priorities
+Categories
+Groups
+```
+
+The frontend uses these APIs to dynamically populate:
+
+* Task forms
+* Edit forms
+* Filters
+* Task cards
+* Workspace Settings
 
 ---
 
@@ -298,67 +501,83 @@ The frontend uses these endpoints to populate dropdowns and filtering controls.
 
 A typical task update follows this process:
 
-    User changes task
-            |
-            v
-    React form
-            |
-            v
-    TaskServices
-            |
-            | PATCH /tasks/{id}
-            v
-    FastAPI
-            |
-            v
-    Task CRUD logic
-            |
-            v
-    SQLite
-            |
-            v
-    Updated task
-            |
-            v
-    React refreshes task list
+```text
+User changes task
+        |
+        v
+React component
+        |
+        v
+TaskServices
+        |
+        | PATCH /tasks/{id}
+        v
+FastAPI
+        |
+        v
+Task CRUD logic
+        |
+        v
+SQLite
+        |
+        v
+Updated task
+        |
+        v
+React refreshes task list
+```
 
-The frontend communicates with the backend through service functions rather than directly placing API calls throughout individual components.
+The frontend communicates with the backend through service functions rather than placing API calls throughout individual components.
 
-This keeps API communication separated from the user interface.
+This separates API communication from the user interface.
 
-Task responses contain related information such as:
+Task responses include both configuration IDs and human-readable configuration values where required by the frontend.
 
-- Status name
-- Priority name
-- Category name
-- Group name
+For example:
 
-rather than requiring the frontend to interpret every foreign key itself.
+```text
+status_id
+status
+
+priority_id
+priority
+
+category_id
+category
+
+group_id
+group
+```
+
+This allows the frontend to both display configuration names and use their IDs when performing updates and filtering.
 
 ---
 
-# Configurable Application Architecture
+# Configurable Use Cases
 
-One of the primary goals of this project is to avoid building a separate application for every type of task-management scenario.
-
-Instead, the core task-management system remains the same while its configuration changes.
-
-Potential configurations include:
+The application is designed to support multiple workflows through workspace configuration.
 
 ## Personal Task Management
 
 Example categories:
 
-- Groceries
-- Chores
-- Health
-- Personal
+* Groceries
+* Chores
+* Projects
+* Personal
 
 Example groups:
 
-- Personal
-- Family
-- Home
+* Personal
+* Home
+* Family
+
+Possible statuses:
+
+* Open
+* In Progress
+* Completed
+* Cancelled
 
 ---
 
@@ -366,27 +585,19 @@ Example groups:
 
 Example categories:
 
-- Operations
-- Customer Support
-- Finance
-- Administration
-
-Example groups:
-
-- Sales
-- Operations
-- HR
-- Management
+* Operations
+* Customers
+* Finance
+* Maintenance
+* Projects
 
 Possible statuses:
 
-- New
-- Assigned
-- In Progress
-- Waiting on Customer
-- Resolved
-- Closed
-- Cancelled
+* New
+* In Progress
+* Blocked
+* Completed
+* Cancelled
 
 ---
 
@@ -394,21 +605,20 @@ Possible statuses:
 
 Example categories:
 
-- Infrastructure
-- Waste Collection
-- Roads
-- Permits
-- Public Services
+* Infrastructure
+* Roads
+* Waste
+* Parks
+* Public Services
 
 Possible statuses:
 
-- Submitted
-- Under Review
-- Assigned
-- In Progress
-- Waiting on Resident
-- Completed
-- Cancelled
+* Submitted
+* Under Review
+* Assigned
+* In Progress
+* Resolved
+* Cancelled
 
 ---
 
@@ -416,16 +626,16 @@ Possible statuses:
 
 Example categories:
 
-- Assignments
-- Exams
-- Projects
-- Research
+* Assignments
+* Exams
+* Projects
+* Research
 
-Example groups:
+Possible groups:
 
-- University
-- Courses
-- Personal
+* University
+* Courses
+* Personal
 
 ---
 
@@ -433,20 +643,20 @@ Example groups:
 
 Example categories:
 
-- Hardware
-- Software
-- Network
-- Security
-- Account Access
+* Hardware
+* Software
+* Network
+* Security
+* Account Access
 
 Possible statuses:
 
-- Submitted
-- Assigned
-- Investigating
-- Waiting for User
-- Resolved
-- Closed
+* Submitted
+* Assigned
+* Investigating
+* Waiting for User
+* Resolved
+* Closed
 
 ---
 
@@ -454,20 +664,20 @@ Possible statuses:
 
 Example categories:
 
-- Features
-- Bugs
-- Documentation
-- Research
-- Maintenance
+* Features
+* Bugs
+* Documentation
+* Research
+* Maintenance
 
 Possible statuses:
 
-- Backlog
-- Planned
-- In Progress
-- Review
-- Completed
-- Cancelled
+* Backlog
+* Planned
+* In Progress
+* Review
+* Completed
+* Cancelled
 
 ---
 
@@ -475,19 +685,19 @@ Possible statuses:
 
 Example categories:
 
-- Inspection
-- Maintenance
-- Repair
-- Installation
-- Safety
+* Inspection
+* Maintenance
+* Repair
+* Installation
+* Safety
 
 Possible statuses:
 
-- Assigned
-- Scheduled
-- In Progress
-- Completed
-- Cancelled
+* Assigned
+* Scheduled
+* In Progress
+* Completed
+* Cancelled
 
 ---
 
@@ -495,176 +705,22 @@ Possible statuses:
 
 Example categories:
 
-- Leads
-- Follow-ups
-- Customer Requests
-- Deals
-- Accounts
+* Leads
+* Follow-ups
+* Customer Requests
+* Deals
+* Accounts
 
 Possible statuses:
 
-- New
-- Contacted
-- Qualified
-- Proposal
-- Won
-- Lost
+* New
+* Contacted
+* Qualified
+* Proposal
+* Won
+* Lost
 
----
-
-# Workspace Architecture
-
-The long-term architecture will introduce the concept of a **Workspace**.
-
-A workspace represents a particular environment or configuration of the application.
-
-For example:
-
-    User
-     |
-     ├── Personal
-     |
-     ├── Business Operations
-     |
-     └── Software Project
-
-Each workspace can have its own:
-
-- Tasks
-- Statuses
-- Priorities
-- Categories
-- Groups
-- Configuration
-- Terminology
-- Colors and icons
-
-This allows the same application to support different workflows without duplicating the application code.
-
-For example:
-
-    Personal Workspace
-        |
-        ├── Open
-        ├── In Progress
-        ├── Completed
-        └── Cancelled
-
-while another workspace could use:
-
-    Business Operations
-        |
-        ├── New
-        ├── Assigned
-        ├── In Progress
-        ├── Waiting on Customer
-        ├── Resolved
-        ├── Closed
-        └── Cancelled
-
-The task-management logic remains the same.
-
-Only the configuration changes.
-
----
-
-# Planned Workspace Configuration
-
-The frontend currently requests configuration data independently:
-
-    GET /statuses
-    GET /priorities
-    GET /categories
-    GET /groups
-
-The planned architecture will introduce workspace-aware configuration such as:
-
-    GET /workspaces
-    GET /workspaces/{workspace_id}
-    GET /workspaces/{workspace_id}/configuration
-
-The backend could provide a complete configuration object:
-
-    {
-      "workspace": "Business Operations",
-      "statuses": [],
-      "priorities": [],
-      "categories": [],
-      "groups": []
-    }
-
-The frontend can then render the application based on the selected workspace rather than relying on hardcoded configuration.
-
----
-
-# Multi-User Architecture
-
-A future version will introduce authentication and user accounts.
-
-The intended relationship is:
-
-    User
-      |
-      v
-    Workspaces
-      |
-      v
-    Tasks
-
-This would allow users to belong to one or more workspaces.
-
-For example:
-
-    Romeo
-     |
-     ├── Personal
-     │     └── Personal Tasks
-     │
-     ├── Business Operations
-     │     └── Business Tasks
-     │
-     └── Software Project
-           └── Development Tasks
-
-This will allow the application to move from a single-user local application toward a multi-user hosted system.
-
----
-
-# Deployment Plan
-
-The application is currently developed locally but is intended to be deployed to Azure.
-
-The planned architecture is:
-
-                        Internet
-                           |
-                           v
-                  React Frontend
-                           |
-                           | HTTPS / REST API
-                           v
-                   FastAPI Backend
-                           |
-                           v
-                      PostgreSQL
-
-Potential Azure services:
-
-    React
-      |
-      └── Azure Static Web Apps
-
-    FastAPI
-      |
-      └── Azure App Service
-
-    Database
-      |
-      └── Azure PostgreSQL
-
-SQLite is appropriate for the current development environment and single-user local application.
-
-For a production multi-user deployment, PostgreSQL will provide a more appropriate database architecture.
+These are examples of potential configurations rather than hardcoded application behavior.
 
 ---
 
@@ -672,103 +728,87 @@ For a production multi-user deployment, PostgreSQL will provide a more appropria
 
 ## Phase 1 - Core Application
 
-- [x] FastAPI backend
-- [x] SQLite database
-- [x] Task CRUD operations
-- [x] React frontend
-- [x] REST API integration
-- [x] Categories
-- [x] Groups
-- [x] Priorities
-- [x] Configurable statuses
-- [x] Completed task handling
-- [x] Cancelled task handling
-- [x] Due dates
-- [x] Task filtering
-- [x] Task cards
-- [x] Create Task page
-- [x] Edit Task page
-- [x] Dashboard
+* [x] FastAPI backend
+* [x] SQLite database
+* [x] Task CRUD operations
+* [x] React frontend
+* [x] REST API integration
+* [x] Categories
+* [x] Groups
+* [x] Priorities
+* [x] Statuses
+* [x] Configurable completed/cancelled status behavior
+* [x] Completed task handling
+* [x] Cancelled task handling
+* [x] Completion timestamps
+* [x] Due dates
+* [x] Task filtering
+* [x] Task cards
+* [x] Create Task page
+* [x] Edit Task page
+* [x] Dashboard
 
-## Phase 2 - UX Improvements
+## Phase 2 - Workspace Architecture
 
-- [x] Responsive layout
-- [x] Empty states
-- [x] Task counts
-- [x] Clear filters
-- [x] Improved task cards
-- [x] Improved forms
-- [x] Improved date/time selection
+* [x] Workspace database table
+* [x] Workspace selector
+* [x] Associate tasks with workspaces
+* [x] Associate configuration data with workspaces
+* [x] Workspace-specific statuses
+* [x] Workspace-specific priorities
+* [x] Workspace-specific categories
+* [x] Workspace-specific groups
+* [x] Workspace Settings
+* [x] Add workspace statuses
+* [x] Edit workspace statuses
+* [x] Configure completed status
+* [x] Configure cancelled status
+* [x] Add/edit workspace priorities
+* [x] Add/edit workspace categories
+* [x] Add/edit workspace groups
+* [x] Workspace-specific task filtering
+* [x] Workspace-specific task status actions
+
+## Phase 3 - UX Improvements
+
+* [x] Responsive layout
+* [x] Empty states
+* [x] Task counts
+* [x] Clear filters
+* [x] Improved task cards
+* [x] Improved forms
+* [x] Improved date/time selection
+* [x] Configuration management UI
 
 Planned:
 
-- [ ] Custom delete confirmation modal
-- [ ] Improved completed/cancelled visual states
-- [ ] Improved dashboard analytics
-- [ ] Overdue task indicators
-- [ ] Tasks due today
-- [ ] Priority breakdown
-- [ ] Completion percentage
-
-## Phase 3 - Configuration
-
-- [ ] Workspace database table
-- [ ] Associate tasks with workspaces
-- [ ] Associate configuration data with workspaces
-- [ ] Workspace-specific statuses
-- [ ] Workspace-specific priorities
-- [ ] Workspace-specific categories
-- [ ] Workspace-specific groups
-- [ ] Workspace selector
-- [ ] Personal configuration
-- [ ] Business Operations configuration
-- [ ] Municipal Services configuration
+* [ ] Custom delete confirmation modal
+* [ ] Configuration deletion constraints
+* [ ] Prevent multiple completed statuses per workspace
+* [ ] Prevent multiple cancelled statuses per workspace
+* [ ] Improved dashboard analytics
+* [ ] Overdue task indicators
+* [ ] Tasks due today
+* [ ] Priority breakdown
+* [ ] Completion percentage
 
 ## Phase 4 - Authentication
 
-- [ ] User accounts
-- [ ] Authentication
-- [ ] User/workspace relationships
-- [ ] Workspace permissions
-- [ ] Multi-user task management
+* [ ] User accounts
+* [ ] Authentication
+* [ ] User/workspace relationships
+* [ ] Workspace permissions
+* [ ] Multi-user task management
 
 ## Phase 5 - Production Deployment
 
-- [ ] GitHub repository
-- [ ] Production environment variables
-- [ ] Azure frontend deployment
-- [ ] Azure backend deployment
-- [ ] PostgreSQL migration
-- [ ] Production API configuration
-- [ ] HTTPS
-- [ ] Production database configuration
-
----
-
-# Goals of the Project
-
-The project is intended to demonstrate practical full-stack development skills, including:
-
-- REST API design
-- Backend development with FastAPI
-- Relational database design
-- SQL
-- Foreign key relationships
-- CRUD operations
-- Pydantic validation
-- React development
-- React Router
-- Frontend state management
-- API integration
-- Dynamic configuration
-- Application architecture
-- Cloud deployment
-- Git and GitHub
-- Authentication and multi-user systems
-
-The focus is not simply on building a to-do list.
-
-The goal is to build a flexible application architecture that can adapt to different operational workflows while keeping the underlying system reusable.
+* [ ] Production environment variables
+* [ ] Azure frontend deployment
+* [ ] Azure backend deployment
+* [ ] PostgreSQL migration
+* [ ] Production API configuration
+* [ ] HTTPS
+* [ ] Production database configuration
 
 ---
 
@@ -778,103 +818,179 @@ The goal is to build a flexible application architecture that can adapt to diffe
 
 Navigate to the backend directory:
 
-    cd backend
+```bash
+cd backend
+```
 
 Create a virtual environment:
 
-    python3 -m venv .venv
+```bash
+python3 -m venv .venv
+```
 
 Activate the virtual environment:
 
-    source .venv/bin/activate
+```bash
+source .venv/bin/activate
+```
 
 Install dependencies:
 
-    pip install fastapi uvicorn
+```bash
+pip install fastapi uvicorn
+```
 
 Start the FastAPI development server:
 
-    uvicorn main:app --reload
+```bash
+uvicorn main:app --reload
+```
 
 The backend will be available at:
 
-    http://127.0.0.1:8000
+```text
+http://127.0.0.1:8000
+```
 
 FastAPI documentation is available at:
 
-    http://127.0.0.1:8000/docs
+```text
+http://127.0.0.1:8000/docs
+```
 
 ## Frontend
 
 Open another terminal and navigate to the frontend:
 
-    cd frontend
+```bash
+cd frontend
+```
 
 Install dependencies:
 
-    npm install
+```bash
+npm install
+```
 
 Start the Vite development server:
 
-    npm run dev
+```bash
+npm run dev
+```
 
 The frontend will normally be available at:
 
-    http://localhost:5173
+```text
+http://localhost:5173
+```
 
 ---
 
-# Development Notes
+# Development Approach
 
 The project is being developed incrementally.
 
-The current implementation intentionally prioritizes understanding the underlying architecture over introducing unnecessary frameworks or abstractions.
+Rather than beginning with a large framework or attempting to implement the entire platform at once, the application is being expanded through progressively more complex requirements.
 
-The application started as a basic task-management system and is being progressively expanded to demonstrate:
+The development progression has been:
 
-1. Database design
-2. Backend API development
-3. Frontend development
-4. API integration
-5. Configurable workflows
-6. Cloud deployment
-7. Multi-user architecture
+```text
+Basic Task Management
+        |
+        v
+REST API
+        |
+        v
+Relational Database
+        |
+        v
+Configuration Tables
+        |
+        v
+Dynamic Status Behavior
+        |
+        v
+Workspace Architecture
+        |
+        v
+Workspace-Specific Configuration
+        |
+        v
+Multi-Workspace Task Management
+        |
+        v
+Authentication
+        |
+        v
+Cloud Deployment
+```
 
-The architecture will continue to evolve as new requirements are introduced.
+This approach provides practical experience with both individual technologies and the architectural decisions required to connect them into a complete application.
+
+---
+
+# Goals of the Project
+
+The project is intended to demonstrate practical full-stack development skills, including:
+
+* REST API design
+* Backend development with FastAPI
+* Relational database design
+* SQL
+* Foreign key relationships
+* CRUD operations
+* Pydantic validation
+* React development
+* React Router
+* Frontend state management
+* API integration
+* Dynamic configuration
+* Workspace architecture
+* Application architecture
+* Cloud deployment
+* Git and GitHub
+* Authentication
+* Multi-user systems
+
+The focus is not simply on building a basic to-do list.
+
+The goal is to build a flexible application architecture that can adapt to different operational workflows while keeping the underlying system reusable.
 
 ---
 
 # Future Vision
 
-The final goal is a reusable task and workflow platform rather than a single-purpose to-do application.
+The long-term goal is to evolve the application into a reusable task and workflow-management platform.
 
-A user or organization should eventually be able to create a workspace and configure it for their specific workflow.
+A user or organization should eventually be able to create a workspace and configure it for a specific workflow.
 
 For example:
 
-    Create Workspace
-           |
-           v
-    Choose Configuration
-           |
-           ├── Personal
-           ├── Business
-           ├── Municipal
-           ├── Education
-           ├── IT Help Desk
-           └── Custom
-           |
-           v
-    Configure
-           |
-           ├── Statuses
-           ├── Priorities
-           ├── Categories
-           └── Groups
-           |
-           v
-    Start Managing Tasks
+```text
+Create Workspace
+       |
+       v
+Choose Configuration
+       |
+       ├── Personal
+       ├── Business
+       ├── Municipal
+       ├── Education
+       ├── IT Help Desk
+       └── Custom
+       |
+       v
+Configure Workspace
+       |
+       ├── Statuses
+       ├── Priorities
+       ├── Categories
+       └── Groups
+       |
+       v
+Manage Tasks
+```
 
 The underlying application remains the same while the configuration determines how tasks are managed.
 
-This makes the project a foundation for a broader workflow-management platform that could eventually support different organizations, teams, and operational processes through the same core application.
+The eventual goal is to support different users, teams, and organizations through the same core platform while maintaining a clean separation between application logic and workflow configuration.

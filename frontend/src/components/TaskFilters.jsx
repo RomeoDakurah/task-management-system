@@ -6,7 +6,7 @@ import {
     getGroups
 } from "../services/ConfigServices";
 
-function TaskFilters({ filters, setFilters }) {
+function TaskFilters({ filters, setFilters, workspaceId }) {
 
     const [statuses, setStatuses] = useState([]);
     const [priorities, setPriorities] = useState([]);
@@ -15,40 +15,48 @@ function TaskFilters({ filters, setFilters }) {
 
     useEffect(() => {
 
+        if (!workspaceId) {
+            setStatuses([]);
+            setPriorities([]);
+            setCategories([]);
+            setGroups([]);
+            return;
+        }
+    
         async function loadFilters() {
-
+    
             try {
-
+    
                 const [
                     statusData,
                     priorityData,
                     categoryData,
                     groupData
                 ] = await Promise.all([
-                    getStatuses(),
-                    getPriorities(),
-                    getCategories(),
-                    getGroups()
+                    getStatuses(workspaceId),
+                    getPriorities(workspaceId),
+                    getCategories(workspaceId),
+                    getGroups(workspaceId)
                 ]);
-
+    
                 setStatuses(statusData);
                 setPriorities(priorityData);
                 setCategories(categoryData);
                 setGroups(groupData);
-
+    
             } catch (error) {
-
+    
                 console.error(
                     "Failed to load filter data:",
                     error
                 );
-
+    
             }
         }
-
+    
         loadFilters();
-
-    }, []);
+    
+    }, [workspaceId]);
 
     function handleChange(event) {
 

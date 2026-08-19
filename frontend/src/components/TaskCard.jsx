@@ -1,7 +1,12 @@
 import { Link } from "react-router-dom";
 import { updateTask } from "../services/TaskServices";
 
-function TaskCard({ task, onDelete, onStatusChange }) {
+function TaskCard({
+    task,
+    onDelete,
+    onTaskUpdated,
+    statuses
+}) {
 
     function formatDueDate(date) {
 
@@ -18,6 +23,7 @@ function TaskCard({ task, onDelete, onStatusChange }) {
         });
     }
 
+
     function getPriorityClass(priority) {
 
         if (!priority) {
@@ -27,24 +33,45 @@ function TaskCard({ task, onDelete, onStatusChange }) {
         return `badge priority-${priority.toLowerCase()}`;
     }
 
-    async function handleStatusChange(statusId) {
+
+    async function changeTaskStatus(statusId) {
 
         try {
+
             await updateTask(task.id, {
                 status_id: statusId
             });
-    
-            if (onStatusChange) {
-                await onStatusChange();
+
+            if (onTaskUpdated) {
+                await onTaskUpdated();
             }
-    
+
         } catch (error) {
-            console.error("Failed to update task status:", error);
+
+            console.error(
+                "Failed to update task status:",
+                error
+            );
+
         }
     }
 
-    const isCompleted = task.status === "Completed";
-    const isCancelled = task.status === "Cancelled";
+
+    const completedStatus = statuses?.find(
+        (status) => status.is_completed
+    );
+    
+    const cancelledStatus = statuses?.find(
+        (status) => status.is_cancelled
+    );
+    
+    const isCompleted =
+        completedStatus &&
+        task.status === completedStatus.name;
+    
+    const isCancelled =
+        cancelledStatus &&
+        task.status === cancelledStatus.name;
 
     return (
         <div
@@ -69,11 +96,13 @@ function TaskCard({ task, onDelete, onStatusChange }) {
 
             </div>
 
+
             {task.description && (
                 <p className="task-description">
                     {task.description}
                 </p>
             )}
+
 
             <div className="task-meta">
 
@@ -97,11 +126,15 @@ function TaskCard({ task, onDelete, onStatusChange }) {
 
             </div>
 
+
             <div className="task-card-bottom">
 
                 {task.due_date ? (
                     <div className="task-due-date">
-                        <span className="due-icon">◷</span>
+                        <span className="due-icon">
+                            ◷
+                        </span>
+
                         Due {formatDueDate(task.due_date)}
                     </div>
                 ) : (
@@ -110,25 +143,42 @@ function TaskCard({ task, onDelete, onStatusChange }) {
                     </div>
                 )}
 
+
                 <div className="task-actions">
 
                     {!isCompleted && !isCancelled && (
                         <>
-                            <button
-                                className="complete-button"
-                                onClick={() => handleStatusChange(3)}
-                            >
-                                Complete
-                            </button>
 
-                            <button
-                                className="cancel-button"
-                                onClick={() => handleStatusChange(4)}
-                            >
-                                Cancel
-                            </button>
+                            {completedStatus && (
+                                <button
+                                    className="complete-button"
+                                    onClick={() =>
+                                        changeTaskStatus(
+                                            completedStatus.id
+                                        )
+                                    }
+                                >
+                                    Complete
+                                </button>
+                            )}
+
+
+                            {cancelledStatus && (
+                                <button
+                                    className="cancel-button"
+                                    onClick={() =>
+                                        changeTaskStatus(
+                                            cancelledStatus.id
+                                        )
+                                    }
+                                >
+                                    Cancel
+                                </button>
+                            )}
+
                         </>
                     )}
+
 
                     <Link
                         to={`/tasks/${task.id}/edit`}
@@ -138,6 +188,7 @@ function TaskCard({ task, onDelete, onStatusChange }) {
                             Edit
                         </button>
                     </Link>
+
 
                     <button
                         className="delete-button"
@@ -153,5 +204,6 @@ function TaskCard({ task, onDelete, onStatusChange }) {
         </div>
     );
 }
+
 
 export default TaskCard;
