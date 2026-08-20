@@ -19,7 +19,7 @@ The system is being developed incrementally, with an emphasis on understanding a
 
 ## Workspace Settings
 
-![Workspace Settings](screenshots/workspace-settings.png)
+![Workspace Settings](https://github.com/RomeoDakurah/task-management-system/blob/main/screenshots/Workspace-Settings.png#:~:text=Workspace%2DSettings.-,png,-.gitignore)
 ![](screenshots/workspace-settings-2.png)
 
 ---
