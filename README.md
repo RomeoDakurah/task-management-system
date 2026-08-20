@@ -15,7 +15,7 @@ The system is being developed incrementally, with an emphasis on understanding a
 
 ## Task Management
 
-![Task Management](screenshots/tasks.png)
+![Task Management](https://github.com/RomeoDakurah/task-management-system/blob/main/screenshots/Tasks.png#:~:text=Tasks.-,png,-Workspace%2DSettings%2D2)
 
 ## Workspace Settings
 
