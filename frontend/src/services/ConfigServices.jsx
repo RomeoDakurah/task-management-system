@@ -1,358 +1,161 @@
-const API_URL = import.meta.env.VITE_API_URL;
+import { apiFetch } from "./api";
 
+// ========================================
+// Workspaces
+// ========================================
+
+// Only workspaces the current user belongs to, with their role in each
 export async function getWorkspaces() {
+    return apiFetch("/workspaces");
+}
 
-    const response = await fetch(
-        `${API_URL}/workspaces`
-    );
+export async function createWorkspace(name, type) {
+    return apiFetch("/workspaces", {
+        method: "POST",
+        body: JSON.stringify({ name, type })
+    });
+}
 
-    if (!response.ok) {
-        throw new Error("Failed to fetch workspaces");
-    }
+// Admin only
+export async function getWorkspaceMembers(workspaceId) {
+    return apiFetch(`/workspaces/${workspaceId}/members`);
+}
 
-    return response.json();
+// Admin only — the invitee must already have an account
+export async function addWorkspaceMember(workspaceId, email, role) {
+    return apiFetch(`/workspaces/${workspaceId}/members`, {
+        method: "POST",
+        body: JSON.stringify({ email, role })
+    });
+}
+
+// Admin only
+export async function updateMemberRole(workspaceId, userId, role) {
+    return apiFetch(`/workspaces/${workspaceId}/members/${userId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ role })
+    });
+}
+
+// Admin only
+export async function removeWorkspaceMember(workspaceId, userId) {
+    return apiFetch(`/workspaces/${workspaceId}/members/${userId}`, {
+        method: "DELETE"
+    });
 }
 
 
 export async function getStatuses(workspaceId) {
-
-    const response = await fetch(
-        `${API_URL}/workspaces/${workspaceId}/statuses`
-    );
-
-    if (!response.ok) {
-        throw new Error("Failed to fetch statuses");
-    }
-
-    return response.json();
+    return apiFetch(`/workspaces/${workspaceId}/statuses`);
 }
-
 
 export async function getPriorities(workspaceId) {
-
-    const response = await fetch(
-        `${API_URL}/workspaces/${workspaceId}/priorities`
-    );
-
-    if (!response.ok) {
-        throw new Error("Failed to fetch priorities");
-    }
-
-    return response.json();
+    return apiFetch(`/workspaces/${workspaceId}/priorities`);
 }
-
 
 export async function getCategories(workspaceId) {
-
-    const response = await fetch(
-        `${API_URL}/workspaces/${workspaceId}/categories`
-    );
-
-    if (!response.ok) {
-        throw new Error("Failed to fetch categories");
-    }
-
-    return response.json();
+    return apiFetch(`/workspaces/${workspaceId}/categories`);
 }
 
-
 export async function getGroups(workspaceId) {
-
-    const response = await fetch(
-        `${API_URL}/workspaces/${workspaceId}/groups`
-    );
-
-    if (!response.ok) {
-        throw new Error("Failed to fetch groups");
-    }
-
-    return response.json();
+    return apiFetch(`/workspaces/${workspaceId}/groups`);
 }
 
 // ========================================
-// Statuses
+// Statuses (admin only, enforced server-side)
 // ========================================
 
 export async function createStatus(workspaceId, status) {
-
-    const response = await fetch(
-        `${API_URL}/workspaces/${workspaceId}/statuses`,
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(status)
-        }
-    );
-
-    if (!response.ok) {
-        throw new Error("Failed to create status");
-    }
-
-    return response.json();
+    return apiFetch(`/workspaces/${workspaceId}/statuses`, {
+        method: "POST",
+        body: JSON.stringify(status)
+    });
 }
 
-
-export async function updateStatus(
-    workspaceId,
-    statusId,
-    status
-) {
-
-    const response = await fetch(
-        `${API_URL}/workspaces/${workspaceId}/statuses/${statusId}`,
-        {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(status)
-        }
-    );
-
-    if (!response.ok) {
-        throw new Error("Failed to update status");
-    }
-
-    return response.json();
+export async function updateStatus(workspaceId, statusId, status) {
+    return apiFetch(`/workspaces/${workspaceId}/statuses/${statusId}`, {
+        method: "PUT",
+        body: JSON.stringify(status)
+    });
 }
 
-
-export async function deleteStatus(
-    workspaceId,
-    statusId
-) {
-
-    const response = await fetch(
-        `${API_URL}/workspaces/${workspaceId}/statuses/${statusId}`,
-        {
-            method: "DELETE"
-        }
-    );
-
-    if (!response.ok) {
-        throw new Error("Failed to delete status");
-    }
-
-    return response.json();
+export async function deleteStatus(workspaceId, statusId) {
+    return apiFetch(`/workspaces/${workspaceId}/statuses/${statusId}`, {
+        method: "DELETE"
+    });
 }
 
 
 // ========================================
-// Priorities
+// Priorities (admin only, enforced server-side)
 // ========================================
 
-export async function createPriority(
-    workspaceId,
-    priority
-) {
-
-    const response = await fetch(
-        `${API_URL}/workspaces/${workspaceId}/priorities`,
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(priority)
-        }
-    );
-
-    if (!response.ok) {
-        throw new Error("Failed to create priority");
-    }
-
-    return response.json();
+export async function createPriority(workspaceId, priority) {
+    return apiFetch(`/workspaces/${workspaceId}/priorities`, {
+        method: "POST",
+        body: JSON.stringify(priority)
+    });
 }
 
-
-export async function updatePriority(
-    workspaceId,
-    priorityId,
-    priority
-) {
-
-    const response = await fetch(
-        `${API_URL}/workspaces/${workspaceId}/priorities/${priorityId}`,
-        {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(priority)
-        }
-    );
-
-    if (!response.ok) {
-        throw new Error("Failed to update priority");
-    }
-
-    return response.json();
+export async function updatePriority(workspaceId, priorityId, priority) {
+    return apiFetch(`/workspaces/${workspaceId}/priorities/${priorityId}`, {
+        method: "PUT",
+        body: JSON.stringify(priority)
+    });
 }
 
-
-export async function deletePriority(
-    workspaceId,
-    priorityId
-) {
-
-    const response = await fetch(
-        `${API_URL}/workspaces/${workspaceId}/priorities/${priorityId}`,
-        {
-            method: "DELETE"
-        }
-    );
-
-    if (!response.ok) {
-        throw new Error("Failed to delete priority");
-    }
-
-    return response.json();
+export async function deletePriority(workspaceId, priorityId) {
+    return apiFetch(`/workspaces/${workspaceId}/priorities/${priorityId}`, {
+        method: "DELETE"
+    });
 }
 
 
 // ========================================
-// Categories
+// Categories (admin only, enforced server-side)
 // ========================================
 
-export async function createCategory(
-    workspaceId,
-    category
-) {
-
-    const response = await fetch(
-        `${API_URL}/workspaces/${workspaceId}/categories`,
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(category)
-        }
-    );
-
-    if (!response.ok) {
-        throw new Error("Failed to create category");
-    }
-
-    return response.json();
+export async function createCategory(workspaceId, category) {
+    return apiFetch(`/workspaces/${workspaceId}/categories`, {
+        method: "POST",
+        body: JSON.stringify(category)
+    });
 }
 
-
-export async function updateCategory(
-    workspaceId,
-    categoryId,
-    category
-) {
-
-    const response = await fetch(
-        `${API_URL}/workspaces/${workspaceId}/categories/${categoryId}`,
-        {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(category)
-        }
-    );
-
-    if (!response.ok) {
-        throw new Error("Failed to update category");
-    }
-
-    return response.json();
+export async function updateCategory(workspaceId, categoryId, category) {
+    return apiFetch(`/workspaces/${workspaceId}/categories/${categoryId}`, {
+        method: "PUT",
+        body: JSON.stringify(category)
+    });
 }
 
-
-export async function deleteCategory(
-    workspaceId,
-    categoryId
-) {
-
-    const response = await fetch(
-        `${API_URL}/workspaces/${workspaceId}/categories/${categoryId}`,
-        {
-            method: "DELETE"
-        }
-    );
-
-    if (!response.ok) {
-        throw new Error("Failed to delete category");
-    }
-
-    return response.json();
+export async function deleteCategory(workspaceId, categoryId) {
+    return apiFetch(`/workspaces/${workspaceId}/categories/${categoryId}`, {
+        method: "DELETE"
+    });
 }
 
 
 // ========================================
-// Groups
+// Groups (admin only, enforced server-side)
 // ========================================
 
-export async function createGroup(
-    workspaceId,
-    group
-) {
-
-    const response = await fetch(
-        `${API_URL}/workspaces/${workspaceId}/groups`,
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(group)
-        }
-    );
-
-    if (!response.ok) {
-        throw new Error("Failed to create group");
-    }
-
-    return response.json();
+export async function createGroup(workspaceId, group) {
+    return apiFetch(`/workspaces/${workspaceId}/groups`, {
+        method: "POST",
+        body: JSON.stringify(group)
+    });
 }
 
-
-export async function updateGroup(
-    workspaceId,
-    groupId,
-    group
-) {
-
-    const response = await fetch(
-        `${API_URL}/workspaces/${workspaceId}/groups/${groupId}`,
-        {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(group)
-        }
-    );
-
-    if (!response.ok) {
-        throw new Error("Failed to update group");
-    }
-
-    return response.json();
+export async function updateGroup(workspaceId, groupId, group) {
+    return apiFetch(`/workspaces/${workspaceId}/groups/${groupId}`, {
+        method: "PUT",
+        body: JSON.stringify(group)
+    });
 }
 
-
-export async function deleteGroup(
-    workspaceId,
-    groupId
-) {
-
-    const response = await fetch(
-        `${API_URL}/workspaces/${workspaceId}/groups/${groupId}`,
-        {
-            method: "DELETE"
-        }
-    );
-
-    if (!response.ok) {
-        throw new Error("Failed to delete group");
-    }
-
-    return response.json();
+export async function deleteGroup(workspaceId, groupId) {
+    return apiFetch(`/workspaces/${workspaceId}/groups/${groupId}`, {
+        method: "DELETE"
+    });
 }

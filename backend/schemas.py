@@ -32,9 +32,59 @@ class TaskResponse(BaseModel):
     category: Optional[str] = None
     group: Optional[str] = None
     due_date: Optional[str] = None
+    assigned_to: Optional[int] = None
+    created_by: Optional[int] = None
 
 class ConfigCreate(BaseModel):
     name: str
+
+
+class UserSignup(BaseModel):
+    name: str
+    email: str
+    password: str
+
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+
+class UserResponse(BaseModel):
+    id: int
+    name: str
+    email: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse
+
+
+class WorkspaceMembershipResponse(BaseModel):
+    id: int
+    name: str
+    type: str
+    role: str
+
+
+class MemberRoleUpdate(BaseModel):
+    role: str  # 'admin' | 'user'
+
+
+class TaskAssign(BaseModel):
+    assigned_to: int
+
+
+class WorkspaceCreate(BaseModel):
+    name: str
+    type: str
+
+
+class MemberAdd(BaseModel):
+    email: str
+    role: str = "user"  # 'admin' | 'user'
 
 
 class GroupCreate(BaseModel):

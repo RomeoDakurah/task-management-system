@@ -7,7 +7,11 @@ import {
 import { useEffect, useState } from "react";
 
 import AppLayout from "./components/AppLayout";
+import RequireAuth from "./components/RequireAuth";
+import RequireWorkspaceAdmin from "./components/RequireWorkspaceAdmin";
 
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import WorkspacePage from "./pages/WorkspacePage";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
@@ -34,15 +38,22 @@ function App() {
 
             <Routes>
 
+                {/* Auth */}
+
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+
                 {/* Workspace selection */}
 
                 <Route
                     path="/"
                     element={
-                        <WorkspacePage
-                            workspaceId={workspaceId}
-                            setWorkspaceId={setWorkspaceId}
-                        />
+                        <RequireAuth>
+                            <WorkspacePage
+                                workspaceId={workspaceId}
+                                setWorkspaceId={setWorkspaceId}
+                            />
+                        </RequireAuth>
                     }
                 />
 
@@ -50,15 +61,23 @@ function App() {
 
                 {/* Main application */}
 
-                <Route element={<AppLayout />}>
+                <Route
+                    element={
+                        <RequireAuth>
+                            <AppLayout workspaceId={workspaceId} />
+                        </RequireAuth>
+                    }
+                >
 
                     <Route
                         path="/settings"
                         element={
-                            <WorkspaceSettings
-                                workspaceId={workspaceId}
-                                setWorkspaceId={setWorkspaceId}
-                            />
+                            <RequireWorkspaceAdmin workspaceId={workspaceId}>
+                                <WorkspaceSettings
+                                    workspaceId={workspaceId}
+                                    setWorkspaceId={setWorkspaceId}
+                                />
+                            </RequireWorkspaceAdmin>
                         }
                     />
 
@@ -85,18 +104,22 @@ function App() {
                     <Route
                         path="/tasks/create"
                         element={
-                            <CreateTaskPage
-                                workspaceId={workspaceId}
-                            />
+                            <RequireWorkspaceAdmin workspaceId={workspaceId}>
+                                <CreateTaskPage
+                                    workspaceId={workspaceId}
+                                />
+                            </RequireWorkspaceAdmin>
                         }
                     />
 
                     <Route
                         path="/tasks/:taskId/edit"
                         element={
-                            <EditTask
-                                workspaceId={workspaceId}
-                            />
+                            <RequireWorkspaceAdmin workspaceId={workspaceId}>
+                                <EditTask
+                                    workspaceId={workspaceId}
+                                />
+                            </RequireWorkspaceAdmin>
                         }
                     />
 

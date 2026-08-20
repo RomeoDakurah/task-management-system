@@ -300,6 +300,7 @@ function Tasks({ workspaceId, setWorkspaceId }) {
                             key={task.id}
                             task={task}
                             statuses={statuses}
+                            workspaceId={workspaceId}
                             onDelete={handleDelete}
                             onTaskUpdated={handleTaskUpdated}
                         />

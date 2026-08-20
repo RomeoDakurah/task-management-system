@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL;
+import { apiFetch } from "./api";
 
 export async function getTasks(workspace_id, filters = {}) {
     const queryParams = new URLSearchParams();
@@ -11,67 +11,51 @@ export async function getTasks(workspace_id, filters = {}) {
         }
     });
 
-    const response = await fetch(
-        `${API_URL}/tasks?${queryParams.toString()}`
-    );
-
-    if (!response.ok) {
-        throw new Error("Failed to fetch tasks");
-    }
-
-    return response.json();
+    return apiFetch(`/tasks?${queryParams.toString()}`);
 }
 
 export async function createTask(task) {
-    const response = await fetch(`${API_URL}/tasks`, {
+    return apiFetch("/tasks", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
         body: JSON.stringify(task)
     });
-
-    if (!response.ok) {
-        throw new Error("Failed to create task");
-    }
-
-    return response.json();
 }
 
 export async function deleteTask(taskId) {
-    const response = await fetch(`${API_URL}/tasks/${taskId}`, {
+    return apiFetch(`/tasks/${taskId}`, {
         method: "DELETE"
     });
-
-    if (!response.ok) {
-        throw new Error("Failed to delete task");
-    }
-
-    return response.json();
 }
 
 export async function getTask(taskId) {
-    const response = await fetch(`${API_URL}/tasks/${taskId}`);
-
-    if (!response.ok) {
-        throw new Error("Failed to fetch task");
-    }
-
-    return response.json();
+    return apiFetch(`/tasks/${taskId}`);
 }
 
 export async function updateTask(taskId, task) {
-    const response = await fetch(`${API_URL}/tasks/${taskId}`, {
+    return apiFetch(`/tasks/${taskId}`, {
         method: "PATCH",
-        headers: {
-            "Content-Type": "application/json"
-        },
         body: JSON.stringify(task)
     });
+}
 
-    if (!response.ok) {
-        throw new Error("Failed to update task");
-    }
+// Admin only — assign a task to a workspace member
+export async function assignTask(taskId, assignedTo) {
+    return apiFetch(`/tasks/${taskId}/assign`, {
+        method: "PATCH",
+        body: JSON.stringify({ assigned_to: assignedTo })
+    });
+}
 
-    return response.json();
+// Assignee only — accept a task assigned to you
+export async function acceptTask(taskId) {
+    return apiFetch(`/tasks/${taskId}/accept`, {
+        method: "POST"
+    });
+}
+
+// Assignee only — mark a task assigned to you complete
+export async function completeTask(taskId) {
+    return apiFetch(`/tasks/${taskId}/complete`, {
+        method: "POST"
+    });
 }

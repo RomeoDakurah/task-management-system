@@ -1900,3 +1900,120 @@ a {
   }
 
 }
+/* ========================================
+   Auth (Login / Signup)
+   ======================================== */
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.auth-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.auth-field input {
+  height: 44px;
+  padding: 0 14px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+
+  font-size: 14px;
+
+  background: #f9fafb;
+  color: #111827;
+}
+
+.auth-field input:focus {
+  outline: none;
+  border-color: #111827;
+  background: white;
+}
+
+.auth-error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.auth-switch {
+  margin-top: 18px;
+  font-size: 13px;
+  color: #6b7280;
+  text-align: center;
+}
+
+.auth-switch a {
+  color: #111827;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.auth-switch a:hover {
+  text-decoration: underline;
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.role-badge-admin {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.role-badge-user {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sidebar-user-name {
+  font-size: 13px;
+  color: #e5e7eb;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-logout {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 6px;
+}
+
+.sidebar-logout:hover {
+  color: white;
+}

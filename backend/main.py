@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routers import tasks, config
+from routers import tasks, config, auth, workspaces
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -18,5 +18,7 @@ def home():
         "message": "TaskFlow API is running"
     }
 
+app.include_router(auth.router)
+app.include_router(workspaces.router)
 app.include_router(tasks.router)
 app.include_router(config.router)

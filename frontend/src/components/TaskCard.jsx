@@ -1,12 +1,18 @@
 import { Link } from "react-router-dom";
-import { updateTask } from "../services/TaskServices";
+import { updateTask, acceptTask, completeTask } from "../services/TaskServices";
+import { useAuth } from "../context/useAuth";
 
 function TaskCard({
     task,
     onDelete,
     onTaskUpdated,
-    statuses
+    statuses,
+    workspaceId
 }) {
+
+    const { user, isAdminIn } = useAuth();
+    const admin = isAdminIn(workspaceId);
+    const isAssignee = task.assigned_to && user && task.assigned_to === user.id;
 
     function formatDueDate(date) {
 
@@ -53,6 +59,32 @@ function TaskCard({
                 error
             );
 
+        }
+    }
+
+
+    async function handleAccept() {
+        try {
+            await acceptTask(task.id);
+
+            if (onTaskUpdated) {
+                await onTaskUpdated();
+            }
+        } catch (error) {
+            console.error("Failed to accept task:", error);
+        }
+    }
+
+
+    async function handleComplete() {
+        try {
+            await completeTask(task.id);
+
+            if (onTaskUpdated) {
+                await onTaskUpdated();
+            }
+        } catch (error) {
+            console.error("Failed to complete task:", error);
         }
     }
 
@@ -166,6 +198,17 @@ function TaskCard({
                     </div>
                 )}
 
+                {isAssignee && (
+                    <div className="task-info">
+                        <span className="meta-label">
+                            Assigned to
+                        </span>
+                        <span className="meta-value">
+                            You
+                        </span>
+                    </div>
+                )}
+
             </div>
 
 
@@ -194,54 +237,80 @@ function TaskCard({
 
                 <div className="task-actions">
 
-                    {!isCompleted && !isCancelled && (
+                    {/* Assignee actions — accept/complete their own task */}
+                    {isAssignee && !isCompleted && !isCancelled && (
                         <>
+                            <button
+                                className="complete-button"
+                                onClick={handleAccept}
+                            >
+                                Accept
+                            </button>
 
-                            {completedStatus && (
-                                <button
-                                    className="complete-button"
-                                    onClick={() =>
-                                        changeTaskStatus(
-                                            completedStatus.id
-                                        )
-                                    }
-                                >
-                                    Complete
-                                </button>
-                            )}
-
-                            {cancelledStatus && (
-                                <button
-                                    className="cancel-button"
-                                    onClick={() =>
-                                        changeTaskStatus(
-                                            cancelledStatus.id
-                                        )
-                                    }
-                                >
-                                    Cancel
-                                </button>
-                            )}
-
+                            <button
+                                className="complete-button"
+                                onClick={handleComplete}
+                            >
+                                Complete
+                            </button>
                         </>
                     )}
 
+                    {/* Admin actions — full control over the task */}
+                    {admin && (
+                        <>
 
-                    <Link
-                        className="edit-button"
-                        to={`/tasks/${task.id}/edit`}
-                        state={{ task: task }}
-                    >
-                        Edit
-                    </Link>
+                            {!isCompleted && !isCancelled && (
+                                <>
+
+                                    {completedStatus && (
+                                        <button
+                                            className="complete-button"
+                                            onClick={() =>
+                                                changeTaskStatus(
+                                                    completedStatus.id
+                                                )
+                                            }
+                                        >
+                                            Complete
+                                        </button>
+                                    )}
+
+                                    {cancelledStatus && (
+                                        <button
+                                            className="cancel-button"
+                                            onClick={() =>
+                                                changeTaskStatus(
+                                                    cancelledStatus.id
+                                                )
+                                            }
+                                        >
+                                            Cancel
+                                        </button>
+                                    )}
+
+                                </>
+                            )}
 
 
-                    <button
-                        className="delete-button"
-                        onClick={() => onDelete(task.id)}
-                    >
-                        Delete
-                    </button>
+                            <Link
+                                className="edit-button"
+                                to={`/tasks/${task.id}/edit`}
+                                state={{ task: task }}
+                            >
+                                Edit
+                            </Link>
+
+
+                            <button
+                                className="delete-button"
+                                onClick={() => onDelete(task.id)}
+                            >
+                                Delete
+                            </button>
+
+                        </>
+                    )}
 
                 </div>
 

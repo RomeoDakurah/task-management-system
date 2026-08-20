@@ -1,33 +1,17 @@
-import { useEffect, useState } from "react";
-import { getWorkspaces } from "../services/ConfigServices";
+import { useAuth } from "../context/useAuth";
 
 function WorkspaceSelector({ workspaceId, setWorkspaceId }) {
 
-    const [workspaces, setWorkspaces] = useState([]);
-    const [error, setError] = useState(null);
-
-    useEffect(() => {
-        async function loadWorkspaces() {
-            try {
-                const data = await getWorkspaces();
-                setWorkspaces(data);
-    
-            } catch (error) {
-                setError(error.message);
-            }
-        }
-    
-        loadWorkspaces();
-    }, []);
+    const { workspaces, workspacesLoaded } = useAuth();
 
     function handleChange(event) {
         setWorkspaceId(event.target.value);
     }
 
-    if (error) {
+    if (!workspacesLoaded) {
         return (
             <div className="workspace-selector">
-                <span>Workspace unavailable</span>
+                <span>Loading...</span>
             </div>
         );
     }
@@ -54,7 +38,7 @@ function WorkspaceSelector({ workspaceId, setWorkspaceId }) {
                         key={workspace.id}
                         value={workspace.id}
                     >
-                        {workspace.name}
+                        {workspace.name} ({workspace.role})
                     </option>
                 ))}
             </select>

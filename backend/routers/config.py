@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 
 from schemas import (
     ConfigCreate,
@@ -12,6 +12,8 @@ from crud.tasks import (
     get_all_categories,
     get_all_groups,
 )
+
+from dependencies import require_workspace_role
 
 from crud.operations import (
     create_status,
@@ -44,7 +46,8 @@ def get_statuses(workspace_id: int):
 @router.post("/statuses")
 def post_status(
     workspace_id: int,
-    status: StatusCreate
+    status: StatusCreate,
+    _admin: dict = Depends(require_workspace_role("admin"))
 ):
     return create_status(
         workspace_id,
@@ -58,7 +61,8 @@ def post_status(
 def put_status(
     workspace_id: int,
     status_id: int,
-    status: StatusCreate
+    status: StatusCreate,
+    _admin: dict = Depends(require_workspace_role("admin"))
 ):
     updated = update_status(
         workspace_id,
@@ -82,7 +86,8 @@ def put_status(
 @router.delete("/statuses/{status_id}")
 def remove_status(
     workspace_id: int,
-    status_id: int
+    status_id: int,
+    _admin: dict = Depends(require_workspace_role("admin"))
 ):
     deleted = delete_status(
         workspace_id,
@@ -107,7 +112,8 @@ def get_priorities(workspace_id: int):
 @router.post("/priorities")
 def post_priority(
     workspace_id: int,
-    config: ConfigCreate
+    config: ConfigCreate,
+    _admin: dict = Depends(require_workspace_role("admin"))
 ):
     return create_priority(
         workspace_id,
@@ -119,7 +125,8 @@ def post_priority(
 def put_priority(
     workspace_id: int,
     priority_id: int,
-    config: ConfigCreate
+    config: ConfigCreate,
+    _admin: dict = Depends(require_workspace_role("admin"))
 ):
     updated = update_priority(
         workspace_id,
@@ -141,7 +148,8 @@ def put_priority(
 @router.delete("/priorities/{priority_id}")
 def remove_priority(
     workspace_id: int,
-    priority_id: int
+    priority_id: int,
+    _admin: dict = Depends(require_workspace_role("admin"))
 ):
     deleted = delete_priority(
         workspace_id,
@@ -166,7 +174,8 @@ def get_categories(workspace_id: int):
 @router.post("/categories")
 def post_category(
     workspace_id: int,
-    config: ConfigCreate
+    config: ConfigCreate,
+    _admin: dict = Depends(require_workspace_role("admin"))
 ):
     return create_category(
         workspace_id,
@@ -178,7 +187,8 @@ def post_category(
 def put_category(
     workspace_id: int,
     category_id: int,
-    config: ConfigCreate
+    config: ConfigCreate,
+    _admin: dict = Depends(require_workspace_role("admin"))
 ):
     updated = update_category(
         workspace_id,
@@ -200,7 +210,8 @@ def put_category(
 @router.delete("/categories/{category_id}")
 def remove_category(
     workspace_id: int,
-    category_id: int
+    category_id: int,
+    _admin: dict = Depends(require_workspace_role("admin"))
 ):
     deleted = delete_category(
         workspace_id,
@@ -225,7 +236,8 @@ def get_groups(workspace_id: int):
 @router.post("/groups")
 def post_group(
     workspace_id: int,
-    group: GroupCreate
+    group: GroupCreate,
+    _admin: dict = Depends(require_workspace_role("admin"))
 ):
     return create_group(
         workspace_id,
@@ -238,7 +250,8 @@ def post_group(
 def put_group(
     workspace_id: int,
     group_id: int,
-    group: GroupCreate
+    group: GroupCreate,
+    _admin: dict = Depends(require_workspace_role("admin"))
 ):
     updated = update_group(
         workspace_id,
@@ -261,7 +274,8 @@ def put_group(
 @router.delete("/groups/{group_id}")
 def remove_group(
     workspace_id: int,
-    group_id: int
+    group_id: int,
+    _admin: dict = Depends(require_workspace_role("admin"))
 ):
     deleted = delete_group(
         workspace_id,

@@ -854,6 +854,9 @@ Install dependencies:
 ```bash
 pip install fastapi uvicorn
 ```
+```bash
+pip install bcrypt pyjwt
+```
 
 Start the FastAPI development server:
 

@@ -1,7 +1,7 @@
 from database import get_connection
 
 # Create
-def create_task(task):
+def create_task(task, created_by=None):
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -36,9 +36,10 @@ def create_task(task):
             created_at,
             category_id,
             group_id,
-            due_date
+            due_date,
+            created_by
         )
-        VALUES (?, ?, ?, ?, ?, datetime('now'), ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, datetime('now'), ?, ?, ?, ?)
         """,
         (
             task.workspace_id,
@@ -48,7 +49,8 @@ def create_task(task):
             task.priority_id,
             task.category_id,
             task.group_id,
-            task.due_date
+            task.due_date,
+            created_by
         )
     )
 
@@ -86,7 +88,9 @@ def get_all_tasks(
             tasks.category_id,
             categories.name AS category,
             tasks.group_id,
-            groups.name AS group_name
+            groups.name AS group_name,
+            tasks.assigned_to,
+            tasks.created_by
 
         FROM tasks
 
@@ -162,7 +166,9 @@ def get_all_tasks(
             "category": row[11],
 
             "group_id": row[12],
-            "group": row[13]
+            "group": row[13],
+            "assigned_to": row[14],
+            "created_by": row[15]
         }
         for row in rows
     ]
@@ -188,7 +194,10 @@ def get_task_by_id(task_id):
             tasks.category_id,
             categories.name AS category,
             tasks.group_id,
-            groups.name AS group_name
+            groups.name AS group_name,
+            tasks.workspace_id,
+            tasks.assigned_to,
+            tasks.created_by
 
         FROM tasks
 
@@ -230,7 +239,10 @@ def get_task_by_id(task_id):
         "category_id": row[10],
         "category": row[11],
         "group_id": row[12],
-        "group": row[13]
+        "group": row[13],
+        "workspace_id": row[14],
+        "assigned_to": row[15],
+        "created_by": row[16]
     }
 
 # Update
@@ -339,6 +351,49 @@ def update_task(task_id, task_update):
     conn.close()
 
     return updated > 0
+
+# Assign
+def assign_task(task_id, assigned_to):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        UPDATE tasks
+        SET assigned_to = ?
+        WHERE id = ?
+        """,
+        (assigned_to, task_id)
+    )
+
+    conn.commit()
+    updated = cursor.rowcount
+    conn.close()
+
+    return updated > 0
+
+
+def get_task_assignee(task_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT assigned_to
+        FROM tasks
+        WHERE id = ?
+        """,
+        (task_id,)
+    )
+
+    row = cursor.fetchone()
+    conn.close()
+
+    if row is None:
+        return None
+
+    return row[0]
+
 
 # Delete
 def delete_task(task_id):

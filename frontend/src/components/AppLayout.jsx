@@ -1,6 +1,17 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/useAuth";
 
-function AppLayout() {
+function AppLayout({ workspaceId }) {
+
+    const { user, isAdminIn, logout } = useAuth();
+    const navigate = useNavigate();
+
+    const admin = isAdminIn(workspaceId);
+
+    function handleLogout() {
+        logout();
+        navigate("/login", { replace: true });
+    }
 
     return (
         <div className="app">
@@ -10,6 +21,29 @@ function AppLayout() {
         <div className="logo">
             TaskFlow
         </div>
+
+        {user && (
+            <div className="sidebar-user">
+                <span className="sidebar-user-name">
+                    {user.name}
+                    {admin && (
+                        <span
+                            className="role-badge role-badge-admin"
+                            style={{ marginLeft: 8 }}
+                        >
+                            Admin
+                        </span>
+                    )}
+                </span>
+
+                <button
+                    className="sidebar-logout"
+                    onClick={handleLogout}
+                >
+                    Log out
+                </button>
+            </div>
+        )}
 
         <div className="sidebar-content">
 
@@ -35,25 +69,29 @@ function AppLayout() {
 
             </div>
 
-            <NavLink
-                to="/tasks/create"
-                className="create-task-link"
-            >
-                + Create Task
-            </NavLink>
+            {admin && (
+                <NavLink
+                    to="/tasks/create"
+                    className="create-task-link"
+                >
+                    + Create Task
+                </NavLink>
+            )}
 
         </div>
 
-        <div className="sidebar-bottom">
+        {admin && (
+            <div className="sidebar-bottom">
 
-            <NavLink
-                to="/settings"
-                className="nav-link"
-            >
-                Settings
-            </NavLink>
+                <NavLink
+                    to="/settings"
+                    className="nav-link"
+                >
+                    Settings
+                </NavLink>
 
-        </div>
+            </div>
+        )}
 
         </aside>
 

@@ -1,39 +1,18 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getWorkspaces } from "../services/ConfigServices";
+import { useAuth } from "../context/useAuth";
+import { createWorkspace } from "../services/ConfigServices";
 
 function WorkspacePage({ workspaceId, setWorkspaceId }) {
 
-    const [workspaces, setWorkspaces] = useState([]);
+    const { workspaces, workspacesLoaded, refreshWorkspaces } = useAuth();
+
+    const [creating, setCreating] = useState(false);
+    const [newName, setNewName] = useState("");
     const [error, setError] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
 
     const navigate = useNavigate();
-
-    useEffect(() => {
-
-        async function loadWorkspaces() {
-
-            try {
-
-                const data = await getWorkspaces();
-
-                setWorkspaces(data);
-
-            } catch (error) {
-
-                setError(error.message);
-
-            } finally {
-
-                setLoading(false);
-
-            }
-        }
-
-        loadWorkspaces();
-
-    }, []);
 
     function handleContinue() {
 
@@ -45,7 +24,30 @@ function WorkspacePage({ workspaceId, setWorkspaceId }) {
 
     }
 
-    if (loading) {
+    async function handleCreateWorkspace(event) {
+        event.preventDefault();
+
+        if (!newName.trim()) {
+            return;
+        }
+
+        setError(null);
+        setSubmitting(true);
+
+        try {
+            const created = await createWorkspace(newName.trim(), "custom");
+            await refreshWorkspaces();
+            setWorkspaceId(String(created.id));
+            setNewName("");
+            setCreating(false);
+        } catch (err) {
+            setError(err.message || "Failed to create workspace");
+        } finally {
+            setSubmitting(false);
+        }
+    }
+
+    if (!workspacesLoaded) {
         return (
             <div className="workspace-page">
 
@@ -61,32 +63,7 @@ function WorkspacePage({ workspaceId, setWorkspaceId }) {
         );
     }
 
-    if (error) {
-        return (
-            <div className="workspace-page">
-
-                <div className="workspace-card">
-
-                    <div className="workspace-icon">
-                        !
-                    </div>
-
-                    <h1>
-                        Unable to load TaskFlow
-                    </h1>
-
-                    <p>
-                        We couldn't retrieve your workspaces.
-                        Please try again later.
-                    </p>
-
-                </div>
-
-            </div>
-        );
-    }
-
-    if (workspaces.length === 0) {
+    if (workspaces.length === 0 && !creating) {
         return (
             <div className="workspace-page">
 
@@ -114,13 +91,91 @@ function WorkspacePage({ workspaceId, setWorkspaceId }) {
                     </div>
 
                     <h2>
-                        No workspaces available
+                        You're not a member of any workspace yet
                     </h2>
 
                     <p>
-                        There are currently no workspaces available
-                        for you to access.
+                        Create your own workspace to get started — you'll
+                        automatically be its admin. Or ask an existing
+                        admin to add you to theirs.
                     </p>
+
+                    <button
+                        className="workspace-continue"
+                        style={{ marginTop: 16 }}
+                        onClick={() => setCreating(true)}
+                    >
+                        <span>Create a workspace</span>
+                        <span className="continue-arrow">→</span>
+                    </button>
+
+                </div>
+
+            </div>
+        );
+    }
+
+    if (creating) {
+        return (
+            <div className="workspace-page">
+
+                <div className="workspace-hero">
+                    <div className="workspace-brand">TaskFlow</div>
+                    <h1>Name your workspace</h1>
+                    <p className="workspace-subtitle">
+                        You'll be its admin, with full configuration
+                        and task-assignment access.
+                    </p>
+                </div>
+
+                <div className="workspace-card">
+
+                    <form onSubmit={handleCreateWorkspace}>
+
+                        {error && (
+                            <div className="auth-error">{error}</div>
+                        )}
+
+                        <div className="auth-field">
+                            <label htmlFor="workspace-name">
+                                Workspace name
+                            </label>
+                            <input
+                                id="workspace-name"
+                                type="text"
+                                value={newName}
+                                onChange={(e) => setNewName(e.target.value)}
+                                placeholder="e.g. Marketing Team"
+                                required
+                            />
+                        </div>
+
+                        <button
+                            type="submit"
+                            className="workspace-continue"
+                            disabled={submitting}
+                        >
+                            <span>
+                                {submitting ? "Creating..." : "Create workspace"}
+                            </span>
+                            <span className="continue-arrow">→</span>
+                        </button>
+
+                    </form>
+
+                    {workspaces.length > 0 && (
+                        <div className="auth-switch">
+                            <a
+                                href="#"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    setCreating(false);
+                                }}
+                            >
+                                Back to my workspaces
+                            </a>
+                        </div>
+                    )}
 
                 </div>
 
@@ -191,7 +246,7 @@ function WorkspacePage({ workspaceId, setWorkspaceId }) {
                                     key={workspace.id}
                                     value={workspace.id}
                                 >
-                                    {workspace.name}
+                                    {workspace.name} ({workspace.role})
                                 </option>
                             ))}
                         </select>
@@ -209,80 +264,16 @@ function WorkspacePage({ workspaceId, setWorkspaceId }) {
                     <span className="continue-arrow">→</span>
                 </button>
 
-            </div>
-
-
-            <div className="workspace-overview">
-
-                <div className="overview-header">
-
-                    <h2>
-                        Everything you need to stay organized
-                    </h2>
-
-                    <p>
-                        TaskFlow keeps your work structured and easy
-                        to manage.
-                    </p>
-
-                </div>
-
-
-                <div className="overview-grid">
-
-                    <div className="overview-item">
-
-                        <div className="overview-icon">
-                            ✓
-                        </div>
-
-                        <h3>
-                            Manage tasks
-                        </h3>
-
-                        <p>
-                            Create, edit, organize, and track
-                            tasks from one place.
-                        </p>
-
-                    </div>
-
-
-                    <div className="overview-item">
-
-                        <div className="overview-icon">
-                            ≡
-                        </div>
-
-                        <h3>
-                            Stay organized
-                        </h3>
-
-                        <p>
-                            Use categories, groups, priorities,
-                            and statuses to keep your work structured.
-                        </p>
-
-                    </div>
-
-
-                    <div className="overview-item">
-
-                        <div className="overview-icon">
-                            ◷
-                        </div>
-
-                        <h3>
-                            Track progress
-                        </h3>
-
-                        <p>
-                            See what's open, in progress, completed,
-                            or still waiting for attention.
-                        </p>
-
-                    </div>
-
+                <div className="auth-switch">
+                    <a
+                        href="#"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            setCreating(true);
+                        }}
+                    >
+                        + Create a new workspace
+                    </a>
                 </div>
 
             </div>
