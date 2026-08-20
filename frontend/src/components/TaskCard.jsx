@@ -27,10 +27,10 @@ function TaskCard({
     function getPriorityClass(priority) {
 
         if (!priority) {
-            return "badge";
+            return "priority-default";
         }
 
-        return `badge priority-${priority.toLowerCase()}`;
+        return `priority-${priority.toLowerCase()}`;
     }
 
 
@@ -60,20 +60,23 @@ function TaskCard({
     const completedStatus = statuses?.find(
         (status) => status.is_completed
     );
-    
+
     const cancelledStatus = statuses?.find(
         (status) => status.is_cancelled
     );
-    
+
+
     const isCompleted =
         completedStatus &&
         task.status === completedStatus.name;
-    
+
     const isCancelled =
         cancelledStatus &&
         task.status === cancelledStatus.name;
 
+
     return (
+
         <div
             className={`task-card ${
                 isCompleted ? "task-completed" : ""
@@ -82,20 +85,31 @@ function TaskCard({
             }`}
         >
 
+            {/* Header */}
+
             <div className="task-card-header">
 
-                <h3>
-                    {task.title}
-                </h3>
+                <div className="task-title-section">
+
+                    <h3>
+                        {task.title}
+                    </h3>
+
+                </div>
 
                 {task.priority && (
-                    <span className={getPriorityClass(task.priority)}>
+                    <div
+                        className={`task-priority ${getPriorityClass(task.priority)}`}
+                    >
+                        <span className="priority-dot"></span>
                         {task.priority}
-                    </span>
+                    </div>
                 )}
 
             </div>
 
+
+            {/* Description */}
 
             {task.description && (
                 <p className="task-description">
@@ -104,44 +118,78 @@ function TaskCard({
             )}
 
 
+            {/* Task metadata */}
+
             <div className="task-meta">
 
                 {task.status && (
-                    <span className="badge status-badge">
-                        {task.status}
-                    </span>
+                    <div className="task-status">
+
+                        <span className="meta-label">
+                            Status
+                        </span>
+
+                        <span className="status-value">
+                            {task.status}
+                        </span>
+
+                    </div>
                 )}
+
 
                 {task.category && (
-                    <span className="badge">
-                        {task.category}
-                    </span>
+                    <div className="task-info">
+
+                        <span className="meta-label">
+                            Category
+                        </span>
+
+                        <span className="meta-value">
+                            {task.category}
+                        </span>
+
+                    </div>
                 )}
 
+
                 {task.group && (
-                    <span className="badge">
-                        {task.group}
-                    </span>
+                    <div className="task-info">
+
+                        <span className="meta-label">
+                            Group
+                        </span>
+
+                        <span className="meta-value">
+                            {task.group}
+                        </span>
+
+                    </div>
                 )}
 
             </div>
 
 
+            {/* Bottom */}
+
             <div className="task-card-bottom">
 
-                {task.due_date ? (
-                    <div className="task-due-date">
-                        <span className="due-icon">
-                            ◷
-                        </span>
+                <div className="task-due-date">
 
-                        Due {formatDueDate(task.due_date)}
-                    </div>
-                ) : (
-                    <div className="task-due-date no-due-date">
-                        No due date
-                    </div>
-                )}
+                    <span className="due-icon">
+                        ◷
+                    </span>
+
+                    {task.due_date ? (
+                        <span>
+                            Due {formatDueDate(task.due_date)}
+                        </span>
+                    ) : (
+                        <span className="no-due-date">
+                            No due date
+                        </span>
+                    )}
+
+                </div>
 
 
                 <div className="task-actions">
@@ -162,7 +210,6 @@ function TaskCard({
                                 </button>
                             )}
 
-
                             {cancelledStatus && (
                                 <button
                                     className="cancel-button"
@@ -181,12 +228,11 @@ function TaskCard({
 
 
                     <Link
+                        className="edit-button"
                         to={`/tasks/${task.id}/edit`}
                         state={{ task: task }}
                     >
-                        <button className="edit-button">
-                            Edit
-                        </button>
+                        Edit
                     </Link>
 
 

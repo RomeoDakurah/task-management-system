@@ -7,7 +7,22 @@ The application is designed around a flexible task-management architecture that 
 The system is being developed incrementally, with an emphasis on understanding and implementing the underlying architecture rather than relying on hardcoded workflows.
 
 ---
+# Screenshots
 
+## Dashboard
+
+![TaskFlow Dashboard](screenshots/dashboard.png)
+
+## Task Management
+
+![Task Management](screenshots/tasks.png)
+
+## Workspace Settings
+
+![Workspace Settings](screenshots/workspace-settings.png)
+![](screenshots/workspace-settings-2.png)
+
+---
 # Current Features
 
 ## Task Management
