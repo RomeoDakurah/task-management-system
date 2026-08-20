@@ -11,7 +11,7 @@ The system is being developed incrementally, with an emphasis on understanding a
 
 ## Dashboard
 
-![TaskFlow Dashboard](screenshots/dashboard.png)
+![TaskFlow Dashboard](https://github.com/RomeoDakurah/task-management-system/blob/main/screenshots/Dashboard.png)
 
 ## Task Management
 
