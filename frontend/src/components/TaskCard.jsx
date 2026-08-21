@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { updateTask, acceptTask, completeTask } from "../services/TaskServices";
+import { useState } from "react";
+import { updateTask, acceptTask, completeTask, assignTask } from "../services/TaskServices";
 import { useAuth } from "../context/useAuth";
 
 function TaskCard({
@@ -7,12 +8,15 @@ function TaskCard({
     onDelete,
     onTaskUpdated,
     statuses,
-    workspaceId
+    workspaceId,
+    members = []
 }) {
 
     const { user, isAdminIn } = useAuth();
     const admin = isAdminIn(workspaceId);
     const isAssignee = task.assigned_to && user && task.assigned_to === user.id;
+
+    const [assigning, setAssigning] = useState(false);
 
     function formatDueDate(date) {
 
@@ -87,6 +91,33 @@ function TaskCard({
             console.error("Failed to complete task:", error);
         }
     }
+
+
+    async function handleAssign(event) {
+
+        const userId = event.target.value;
+
+        if (!userId) {
+            return;
+        }
+
+        try {
+            await assignTask(task.id, Number(userId));
+
+            if (onTaskUpdated) {
+                await onTaskUpdated();
+            }
+        } catch (error) {
+            console.error("Failed to assign task:", error);
+        } finally {
+            setAssigning(false);
+        }
+    }
+
+
+    const assignedMember = members.find(
+        (m) => m.id === task.assigned_to
+    );
 
 
     const completedStatus = statuses?.find(
@@ -209,6 +240,17 @@ function TaskCard({
                     </div>
                 )}
 
+                {admin && assignedMember && !isAssignee && (
+                    <div className="task-info">
+                        <span className="meta-label">
+                            Assigned to
+                        </span>
+                        <span className="meta-value">
+                            {assignedMember.name}
+                        </span>
+                    </div>
+                )}
+
             </div>
 
 
@@ -259,6 +301,43 @@ function TaskCard({
                     {/* Admin actions — full control over the task */}
                     {admin && (
                         <>
+
+                            {!isCompleted && !isCancelled && members.length > 0 && (
+
+                                assigning ? (
+                                    <select
+                                        className="assign-select"
+                                        autoFocus
+                                        defaultValue=""
+                                        onChange={handleAssign}
+                                        onBlur={() => setAssigning(false)}
+                                    >
+                                        <option value="" disabled>
+                                            Choose member...
+                                        </option>
+
+                                        {members.map((member) => (
+                                            <option
+                                                key={member.id}
+                                                value={member.id}
+                                            >
+                                                {member.name} ({member.role})
+                                            </option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        className="secondary-button"
+                                        onClick={() => setAssigning(true)}
+                                    >
+                                        {assignedMember
+                                            ? `Reassign`
+                                            : "Assign to..."}
+                                    </button>
+                                )
+
+                            )}
 
                             {!isCompleted && !isCancelled && (
                                 <>

@@ -96,8 +96,9 @@ function WorkspacePage({ workspaceId, setWorkspaceId }) {
 
                     <p>
                         Create your own workspace to get started — you'll
-                        automatically be its admin. Or ask an existing
-                        admin to add you to theirs.
+                        automatically be its admin. If a teammate already
+                        has one set up, ask them to add you by email from
+                        their Workspace Settings instead.
                     </p>
 
                     <button

@@ -3,21 +3,27 @@ import { getTasks, deleteTask } from "../services/TaskServices";
 import TaskCard from "../components/taskCard.jsx";
 import TaskFilters from "../components/TaskFilters";
 import WorkspaceSelector from "../components/WorkspaceSelector";
+import { useAuth } from "../context/useAuth";
 import {
     getStatuses,
     getPriorities,
     getCategories,
-    getGroups
+    getGroups,
+    getWorkspaceMembers
 } from "../services/ConfigServices";
 
 
 function Tasks({ workspaceId, setWorkspaceId }) {
+
+    const { isAdminIn } = useAuth();
+    const admin = isAdminIn(workspaceId);
 
     const [tasks, setTasks] = useState([]);
     const [statuses, setStatuses] = useState([]);
     const [priorities, setPriorities] = useState([]);
     const [categories, setCategories] = useState([]);
     const [groups, setGroups] = useState([]);
+    const [members, setMembers] = useState([]);
     const [error, setError] = useState(null);
 
     const [filters, setFilters] = useState({
@@ -60,8 +66,14 @@ function Tasks({ workspaceId, setWorkspaceId }) {
     
         fetchStatuses();
         fetchConfiguration();
-    
-    }, [workspaceId]);
+
+        if (admin) {
+            fetchMembers();
+        } else {
+            setMembers([]);
+        }
+
+    }, [workspaceId, admin]);
 
 
     // ========================================
@@ -138,6 +150,27 @@ function Tasks({ workspaceId, setWorkspaceId }) {
     
             setError(error.message);
     
+        }
+    }
+
+    // ========================================
+    // Fetch workspace members (admin only — used
+    // for the "Assign to..." control on task cards)
+    // ========================================
+
+    async function fetchMembers() {
+
+        try {
+
+            const data = await getWorkspaceMembers(workspaceId);
+            setMembers(data);
+
+        } catch {
+
+            // Non-admins get a 403 here, which is expected —
+            // just leave the assign control unavailable.
+            setMembers([]);
+
         }
     }
 
@@ -301,6 +334,7 @@ function Tasks({ workspaceId, setWorkspaceId }) {
                             task={task}
                             statuses={statuses}
                             workspaceId={workspaceId}
+                            members={members}
                             onDelete={handleDelete}
                             onTaskUpdated={handleTaskUpdated}
                         />

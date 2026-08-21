@@ -2017,3 +2017,13 @@ a {
 .sidebar-logout:hover {
   color: white;
 }
+
+.assign-select {
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 13px;
+  background: white;
+  color: #111827;
+}

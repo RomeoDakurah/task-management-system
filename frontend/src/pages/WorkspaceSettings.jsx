@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import WorkspaceSelector from "../components/WorkspaceSelector";
+import WorkspaceMembers from "../components/WorkspaceMembers";
 
 import {
     getStatuses,
@@ -386,6 +387,217 @@ function WorkspaceSettings({ workspaceId, setWorkspaceId }) {
 
 
     // ========================================
+    // Render the add/edit form for a given type —
+    // called from within renderSection so it appears
+    // right where you clicked "+ Add", not always at
+    // the top of the page.
+    // ========================================
+
+    function renderForm(type) {
+
+        if (activeForm !== type) {
+            return null;
+        }
+
+        return (
+
+            <div className="status-form-card">
+
+                <div className="status-form-header">
+
+                    <div>
+
+                        <h2>
+                            {editingItem
+                                ? `Edit ${activeForm}`
+                                : `Add ${activeForm}`}
+                        </h2>
+
+                        <p>
+                            Configure this option
+                            for your workspace.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div className="form-group">
+
+                    <label>
+                        {activeForm === "status"
+                            ? "Status name"
+                            : activeForm === "priority"
+                                ? "Priority name"
+                                : activeForm === "category"
+                                    ? "Category name"
+                                    : "Group name"}
+                    </label>
+
+                    <input
+                        type="text"
+                        value={
+                            activeForm === "status"
+                                ? statusForm.name
+                                : formName
+                        }
+                        onChange={(event) => {
+
+                            if (activeForm === "status") {
+
+                                setStatusForm((current) => ({
+                                    ...current,
+                                    name: event.target.value
+                                }));
+
+                            } else {
+
+                                setFormName(
+                                    event.target.value
+                                );
+
+                            }
+
+                        }}
+                        placeholder={
+                            activeForm === "status"
+                                ? "e.g. In Progress"
+                                : activeForm === "priority"
+                                    ? "e.g. High"
+                                    : activeForm === "category"
+                                        ? "e.g. Work"
+                                        : "e.g. Personal"
+                        }
+                    />
+
+                </div>
+
+
+                {activeForm === "status" && (
+
+                    <div className="status-options">
+
+                        <label className="status-option">
+
+                            <input
+                                type="checkbox"
+                                checked={
+                                    statusForm.is_completed
+                                }
+                                onChange={(event) =>
+                                    setStatusForm((current) => ({
+                                        ...current,
+
+                                        is_completed:
+                                            event.target.checked,
+
+                                        is_cancelled:
+                                            event.target.checked
+                                                ? false
+                                                : current.is_cancelled
+                                    }))
+                                }
+                            />
+
+                            <div>
+
+                                <strong>
+                                    Completed status
+                                </strong>
+
+                                <p>
+                                    Tasks using this status
+                                    will be considered
+                                    completed.
+                                </p>
+
+                            </div>
+
+                        </label>
+
+
+                        <label className="status-option">
+
+                            <input
+                                type="checkbox"
+                                checked={
+                                    statusForm.is_cancelled
+                                }
+                                onChange={(event) =>
+                                    setStatusForm((current) => ({
+                                        ...current,
+
+                                        is_cancelled:
+                                            event.target.checked,
+
+                                        is_completed:
+                                            event.target.checked
+                                                ? false
+                                                : current.is_completed
+                                    }))
+                                }
+                            />
+
+                            <div>
+
+                                <strong>
+                                    Cancelled status
+                                </strong>
+
+                                <p>
+                                    Tasks using this status
+                                    will be considered
+                                    cancelled.
+                                </p>
+
+                            </div>
+
+                        </label>
+
+                    </div>
+
+                )}
+
+
+                <div className="form-actions">
+
+                    <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={closeForm}
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="button"
+                        className="primary-button"
+                        onClick={
+                            activeForm === "status"
+                                ? handleSaveStatus
+                                : handleSaveConfiguration
+                        }
+                        disabled={
+                            activeForm === "status"
+                                ? !statusForm.name.trim()
+                                : !formName.trim()
+                        }
+                    >
+                        {editingItem
+                            ? "Save changes"
+                            : `Add ${activeForm}`}
+                    </button>
+
+                </div>
+
+            </div>
+
+        );
+    }
+
+
+    // ========================================
     // Render configuration section
     // ========================================
 
@@ -418,6 +630,9 @@ function WorkspaceSettings({ workspaceId, setWorkspaceId }) {
                     </button>
 
                 </div>
+
+
+                {renderForm(type)}
 
 
                 <div className="settings-list">
@@ -549,204 +764,10 @@ function WorkspaceSettings({ workspaceId, setWorkspaceId }) {
 
 
             {/* ========================================
-                Configuration form
+                Configuration forms now render inline
+                within each section (see renderForm),
+                right where "+ Add" / "Edit" was clicked.
             ======================================== */}
-
-            {activeForm && (
-
-                <div className="status-form-card">
-
-                    <div className="status-form-header">
-
-                        <div>
-
-                            <h2>
-                                {editingItem
-                                    ? `Edit ${activeForm}`
-                                    : `Add ${activeForm}`}
-                            </h2>
-
-                            <p>
-                                Configure this option
-                                for your workspace.
-                            </p>
-
-                        </div>
-
-                    </div>
-
-
-                    <div className="form-group">
-
-                        <label>
-                            {activeForm === "status"
-                                ? "Status name"
-                                : activeForm === "priority"
-                                    ? "Priority name"
-                                    : activeForm === "category"
-                                        ? "Category name"
-                                        : "Group name"}
-                        </label>
-
-                        <input
-                            type="text"
-                            value={
-                                activeForm === "status"
-                                    ? statusForm.name
-                                    : formName
-                            }
-                            onChange={(event) => {
-
-                                if (activeForm === "status") {
-
-                                    setStatusForm((current) => ({
-                                        ...current,
-                                        name: event.target.value
-                                    }));
-
-                                } else {
-
-                                    setFormName(
-                                        event.target.value
-                                    );
-
-                                }
-
-                            }}
-                            placeholder={
-                                activeForm === "status"
-                                    ? "e.g. In Progress"
-                                    : activeForm === "priority"
-                                        ? "e.g. High"
-                                        : activeForm === "category"
-                                            ? "e.g. Work"
-                                            : "e.g. Personal"
-                            }
-                        />
-
-                    </div>
-
-
-                    {activeForm === "status" && (
-
-                        <div className="status-options">
-
-                            <label className="status-option">
-
-                                <input
-                                    type="checkbox"
-                                    checked={
-                                        statusForm.is_completed
-                                    }
-                                    onChange={(event) =>
-                                        setStatusForm((current) => ({
-                                            ...current,
-
-                                            is_completed:
-                                                event.target.checked,
-
-                                            is_cancelled:
-                                                event.target.checked
-                                                    ? false
-                                                    : current.is_cancelled
-                                        }))
-                                    }
-                                />
-
-                                <div>
-
-                                    <strong>
-                                        Completed status
-                                    </strong>
-
-                                    <p>
-                                        Tasks using this status
-                                        will be considered
-                                        completed.
-                                    </p>
-
-                                </div>
-
-                            </label>
-
-
-                            <label className="status-option">
-
-                                <input
-                                    type="checkbox"
-                                    checked={
-                                        statusForm.is_cancelled
-                                    }
-                                    onChange={(event) =>
-                                        setStatusForm((current) => ({
-                                            ...current,
-
-                                            is_cancelled:
-                                                event.target.checked,
-
-                                            is_completed:
-                                                event.target.checked
-                                                    ? false
-                                                    : current.is_completed
-                                        }))
-                                    }
-                                />
-
-                                <div>
-
-                                    <strong>
-                                        Cancelled status
-                                    </strong>
-
-                                    <p>
-                                        Tasks using this status
-                                        will be considered
-                                        cancelled.
-                                    </p>
-
-                                </div>
-
-                            </label>
-
-                        </div>
-
-                    )}
-
-
-                    <div className="form-actions">
-
-                        <button
-                            type="button"
-                            className="secondary-button"
-                            onClick={closeForm}
-                        >
-                            Cancel
-                        </button>
-
-                        <button
-                            type="button"
-                            className="primary-button"
-                            onClick={
-                                activeForm === "status"
-                                    ? handleSaveStatus
-                                    : handleSaveConfiguration
-                            }
-                            disabled={
-                                activeForm === "status"
-                                    ? !statusForm.name.trim()
-                                    : !formName.trim()
-                            }
-                        >
-                            {editingItem
-                                ? "Save changes"
-                                : `Add ${activeForm}`}
-                        </button>
-
-                    </div>
-
-                </div>
-
-            )}
 
 
             {renderSection(
@@ -775,6 +796,11 @@ function WorkspaceSettings({ workspaceId, setWorkspaceId }) {
                 "group",
                 groups
             )}
+
+
+            <WorkspaceMembers
+                workspaceId={workspaceId}
+            />
 
         </div>
     );
