@@ -29,6 +29,8 @@ function App() {
 
         if (workspaceId) {
             localStorage.setItem("workspaceId", workspaceId);
+        } else {
+            localStorage.removeItem("workspaceId");
         }
 
     }, [workspaceId]);

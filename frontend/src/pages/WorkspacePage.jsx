@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
-import { createWorkspace } from "../services/ConfigServices";
+import { createWorkspace, deleteWorkspace } from "../services/ConfigServices";
 
 function WorkspacePage({ workspaceId, setWorkspaceId }) {
 
-    const { workspaces, workspacesLoaded, refreshWorkspaces } = useAuth();
+    const { workspaces, workspacesLoaded, refreshWorkspaces, isAdminIn } = useAuth();
 
     const [creating, setCreating] = useState(false);
     const [newName, setNewName] = useState("");
@@ -42,6 +42,47 @@ function WorkspacePage({ workspaceId, setWorkspaceId }) {
             setCreating(false);
         } catch (err) {
             setError(err.message || "Failed to create workspace");
+        } finally {
+            setSubmitting(false);
+        }
+    }
+
+    async function handleDeleteWorkspace() {
+        const selectedWorkspace = workspaces.find(
+            (workspace) => String(workspace.id) === String(workspaceId)
+        );
+
+        if (!selectedWorkspace || !isAdminIn(workspaceId)) {
+            return;
+        }
+
+        const confirmed = window.confirm(
+            `Delete "${selectedWorkspace.name}"? This will permanently delete its tasks, members, and configuration.`
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        setError(null);
+        setSubmitting(true);
+
+        try {
+            await deleteWorkspace(workspaceId);
+
+            const remaining = await refreshWorkspaces();
+
+            setWorkspaceId(
+                remaining.length > 0
+                    ? String(remaining[0].id)
+                    : ""
+            );
+
+            if (remaining.length === 0) {
+                navigate("/");
+            }
+        } catch (err) {
+            setError(err.message || "Failed to delete workspace");
         } finally {
             setSubmitting(false);
         }
@@ -276,6 +317,31 @@ function WorkspacePage({ workspaceId, setWorkspaceId }) {
                         + Create a new workspace
                     </a>
                 </div>
+
+                {isAdminIn(workspaceId) && (
+                    <div
+                        style={{
+                            marginTop: 24,
+                            paddingTop: 20,
+                            borderTop: "1px solid #e5e7eb"
+                        }}
+                    >
+                        {error && (
+                            <div className="auth-error" style={{ marginBottom: 12 }}>
+                                {error}
+                            </div>
+                        )}
+
+                        <button
+                            type="button"
+                            className="danger-button"
+                            onClick={handleDeleteWorkspace}
+                            disabled={submitting}
+                        >
+                            {submitting ? "Deleting..." : "Delete workspace"}
+                        </button>
+                    </div>
+                )}
 
             </div>
 

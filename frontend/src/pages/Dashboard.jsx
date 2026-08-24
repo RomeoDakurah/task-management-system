@@ -2,8 +2,12 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getTasks } from "../services/TaskServices";
 import WorkspaceSelector from "../components/WorkspaceSelector";
+import { useAuth } from "../context/useAuth";
 
 function Dashboard({ workspaceId, setWorkspaceId }) {
+
+    const { isAdminIn } = useAuth();
+    const admin = isAdminIn(workspaceId);
 
     const [tasks, setTasks] = useState([]);
     const [error, setError] = useState(null);
@@ -84,12 +88,14 @@ function Dashboard({ workspaceId, setWorkspaceId }) {
                     setWorkspaceId={setWorkspaceId}
                 />
 
-                <Link
-                    to="/tasks/create"
-                    className="primary-button"
-                >
-                    Create Task
-                </Link>
+                {admin && (
+                    <Link
+                        to="/tasks/create"
+                        className="primary-button"
+                    >
+                        Create Task
+                    </Link>
+                )}
 
             </div>
 
@@ -192,12 +198,14 @@ function Dashboard({ workspaceId, setWorkspaceId }) {
                             Create your first task to get started.
                         </p>
 
-                        <Link
-                            to="/tasks/create"
-                            className="primary-button"
-                        >
-                            Create Task
-                        </Link>
+                        {admin && (
+                            <Link
+                                to="/tasks/create"
+                                className="primary-button"
+                            >
+                                Create Task
+                            </Link>
+                        )}
 
                     </div>
 
@@ -209,7 +217,7 @@ function Dashboard({ workspaceId, setWorkspaceId }) {
 
                             <Link
                                 key={task.id}
-                                to={`/tasks/${task.id}/edit`}
+                                to={admin ? `/tasks/${task.id}/edit` : "/tasks"}
                                 state={{ task: task }}
                                 className="recent-task"
                             >
@@ -236,7 +244,8 @@ function Dashboard({ workspaceId, setWorkspaceId }) {
                                     </span>
 
                                     <span
-                                        className={`badge priority-${task.priority?.toLowerCase()}`}
+                                        className="badge priority-configured"
+                                        style={{ "--priority-index": task.priority_id || 0 }}
                                     >
                                         {task.priority}
                                     </span>

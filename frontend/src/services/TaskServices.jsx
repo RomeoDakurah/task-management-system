@@ -54,6 +54,12 @@ export async function acceptTask(taskId) {
 }
 
 // Assignee only — mark a task assigned to you complete
+export async function declineTask(taskId) {
+    return apiFetch(`/tasks/${taskId}/decline`, {
+        method: "POST"
+    });
+}
+
 export async function completeTask(taskId) {
     return apiFetch(`/tasks/${taskId}/complete`, {
         method: "POST"

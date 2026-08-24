@@ -29,6 +29,7 @@ class TaskResponse(BaseModel):
     priority: str
     created_at: str
     completed_at: Optional[str] = None
+    accepted_at: Optional[str] = None
     category: Optional[str] = None
     group: Optional[str] = None
     due_date: Optional[str] = None

@@ -1,14 +1,11 @@
 import { useEffect, useState } from "react";
 import { getTasks, deleteTask } from "../services/TaskServices";
-import TaskCard from "../components/taskCard.jsx";
+import TaskCard from "../components/TaskCard.jsx";
 import TaskFilters from "../components/TaskFilters";
 import WorkspaceSelector from "../components/WorkspaceSelector";
 import { useAuth } from "../context/useAuth";
 import {
     getStatuses,
-    getPriorities,
-    getCategories,
-    getGroups,
     getWorkspaceMembers
 } from "../services/ConfigServices";
 
@@ -20,11 +17,9 @@ function Tasks({ workspaceId, setWorkspaceId }) {
 
     const [tasks, setTasks] = useState([]);
     const [statuses, setStatuses] = useState([]);
-    const [priorities, setPriorities] = useState([]);
-    const [categories, setCategories] = useState([]);
-    const [groups, setGroups] = useState([]);
     const [members, setMembers] = useState([]);
     const [error, setError] = useState(null);
+    const [taskView, setTaskView] = useState("all");
 
     const [filters, setFilters] = useState({
         status_id: "",
@@ -58,14 +53,10 @@ function Tasks({ workspaceId, setWorkspaceId }) {
 
         if (!workspaceId) {
             setStatuses([]);
-            setPriorities([]);
-            setCategories([]);
-            setGroups([]);
             return;
         }
     
         fetchStatuses();
-        fetchConfiguration();
 
         if (admin) {
             fetchMembers();
@@ -121,35 +112,6 @@ function Tasks({ workspaceId, setWorkspaceId }) {
 
             setError(error.message);
 
-        }
-    }
-
-    // ========================================
-    // Fetch configuration data (priorities, categories, groups)
-    // ========================================
-
-    async function fetchConfiguration() {
-
-        try {
-    
-            const [
-                priorityData,
-                categoryData,
-                groupData
-            ] = await Promise.all([
-                getPriorities(workspaceId),
-                getCategories(workspaceId),
-                getGroups(workspaceId)
-            ]);
-    
-            setPriorities(priorityData);
-            setCategories(categoryData);
-            setGroups(groupData);
-    
-        } catch (error) {
-    
-            setError(error.message);
-    
         }
     }
 
@@ -227,6 +189,20 @@ function Tasks({ workspaceId, setWorkspaceId }) {
         filters.category_id ||
         filters.group_id;
 
+    const visibleTasks = admin
+        ? tasks
+        : tasks.filter((task) => {
+            if (taskView === "pending") {
+                return !task.accepted_at;
+            }
+
+            if (taskView === "accepted") {
+                return Boolean(task.accepted_at);
+            }
+
+            return true;
+        });
+
 
     if (error) {
         return (
@@ -264,6 +240,39 @@ function Tasks({ workspaceId, setWorkspaceId }) {
             </div>
 
 
+            {!admin && (
+                <div
+                    className="task-filter-header"
+                    style={{ marginBottom: 12 }}
+                >
+                    <div className="task-actions">
+                        <button
+                            type="button"
+                            className={taskView === "all" ? "complete-button" : "secondary-button"}
+                            onClick={() => setTaskView("all")}
+                        >
+                            All tasks
+                        </button>
+
+                        <button
+                            type="button"
+                            className={taskView === "pending" ? "complete-button" : "secondary-button"}
+                            onClick={() => setTaskView("pending")}
+                        >
+                            Pending
+                        </button>
+
+                        <button
+                            type="button"
+                            className={taskView === "accepted" ? "complete-button" : "secondary-button"}
+                            onClick={() => setTaskView("accepted")}
+                        >
+                            Accepted
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Filters */}
 
             <div className="task-filter-header">
@@ -283,8 +292,8 @@ function Tasks({ workspaceId, setWorkspaceId }) {
 
                 <span className="task-count">
 
-                    {tasks.length}{" "}
-                    {tasks.length === 1
+                    {visibleTasks.length}{" "}
+                    {visibleTasks.length === 1
                         ? "task"
                         : "tasks"}
 
@@ -295,7 +304,7 @@ function Tasks({ workspaceId, setWorkspaceId }) {
 
             {/* Task list */}
 
-            {tasks.length === 0 ? (
+            {visibleTasks.length === 0 ? (
 
                 <div className="empty-state">
 
@@ -327,7 +336,7 @@ function Tasks({ workspaceId, setWorkspaceId }) {
 
                 <div className="task-grid">
 
-                    {tasks.map((task) => (
+                    {visibleTasks.map((task) => (
 
                         <TaskCard
                             key={task.id}

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 
 from schemas import WorkspaceCreate, MemberAdd, MemberRoleUpdate
-from crud.workspaces import create_workspace, remove_workspace_member
+from crud.workspaces import create_workspace, remove_workspace_member, delete_workspace
 from crud.users import (
     add_workspace_member,
     get_workspace_role,
@@ -40,6 +40,23 @@ def post_workspace(
         "type": payload.type,
         "role": "admin"
     }
+
+
+# Delete — an admin can delete the entire workspace they administer.
+@router.delete("/{workspace_id}")
+def remove_workspace(
+    workspace_id: int,
+    _: dict = Depends(require_workspace_role("admin"))
+):
+    deleted = delete_workspace(workspace_id)
+
+    if not deleted:
+        raise HTTPException(
+            status_code=404,
+            detail="Workspace not found"
+        )
+
+    return {"message": "Workspace deleted"}
 
 
 # Members — admin only, scoped to that workspace.

@@ -1,6 +1,12 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import { updateTask, acceptTask, completeTask, assignTask } from "../services/TaskServices";
+import {
+    acceptTask,
+    declineTask,
+    completeTask,
+    assignTask,
+    updateTask
+} from "../services/TaskServices";
 import { useAuth } from "../context/useAuth";
 
 function TaskCard({
@@ -14,12 +20,14 @@ function TaskCard({
 
     const { user, isAdminIn } = useAuth();
     const admin = isAdminIn(workspaceId);
-    const isAssignee = task.assigned_to && user && task.assigned_to === user.id;
+    const isAssignee =
+        Boolean(task.assigned_to) &&
+        Boolean(user) &&
+        task.assigned_to === user.id;
 
     const [assigning, setAssigning] = useState(false);
 
     function formatDueDate(date) {
-
         if (!date) {
             return null;
         }
@@ -33,21 +41,18 @@ function TaskCard({
         });
     }
 
-
-    function getPriorityClass(priority) {
-
-        if (!priority) {
-            return "priority-default";
+    function getPriorityStyle(priorityId) {
+        if (!priorityId) {
+            return {};
         }
 
-        return `priority-${priority.toLowerCase()}`;
+        return {
+            "--priority-index": priorityId
+        };
     }
 
-
     async function changeTaskStatus(statusId) {
-
         try {
-
             await updateTask(task.id, {
                 status_id: statusId
             });
@@ -55,17 +60,10 @@ function TaskCard({
             if (onTaskUpdated) {
                 await onTaskUpdated();
             }
-
         } catch (error) {
-
-            console.error(
-                "Failed to update task status:",
-                error
-            );
-
+            console.error("Failed to update task status:", error);
         }
     }
-
 
     async function handleAccept() {
         try {
@@ -79,6 +77,17 @@ function TaskCard({
         }
     }
 
+    async function handleDecline() {
+        try {
+            await declineTask(task.id);
+
+            if (onTaskUpdated) {
+                await onTaskUpdated();
+            }
+        } catch (error) {
+            console.error("Failed to decline task:", error);
+        }
+    }
 
     async function handleComplete() {
         try {
@@ -92,9 +101,7 @@ function TaskCard({
         }
     }
 
-
     async function handleAssign(event) {
-
         const userId = event.target.value;
 
         if (!userId) {
@@ -114,11 +121,9 @@ function TaskCard({
         }
     }
 
-
     const assignedMember = members.find(
-        (m) => m.id === task.assigned_to
+        (member) => member.id === task.assigned_to
     );
-
 
     const completedStatus = statuses?.find(
         (status) => status.is_completed
@@ -128,18 +133,26 @@ function TaskCard({
         (status) => status.is_cancelled
     );
 
-
     const isCompleted =
         completedStatus &&
-        task.status === completedStatus.name;
+        task.status_id === completedStatus.id;
 
     const isCancelled =
         cancelledStatus &&
-        task.status === cancelledStatus.name;
+        task.status_id === cancelledStatus.id;
 
+    const statusClass = isCompleted
+        ? "status-completed"
+        : isCancelled
+            ? "status-cancelled"
+            : "status-default";
+
+    // accepted_at is deliberately separate from status. A task can be
+    // assigned but not accepted yet, even if the workspace has several
+    // non-completed statuses.
+    const isAccepted = Boolean(task.accepted_at);
 
     return (
-
         <div
             className={`task-card ${
                 isCompleted ? "task-completed" : ""
@@ -148,21 +161,16 @@ function TaskCard({
             }`}
         >
 
-            {/* Header */}
-
             <div className="task-card-header">
 
                 <div className="task-title-section">
-
-                    <h3>
-                        {task.title}
-                    </h3>
-
+                    <h3>{task.title}</h3>
                 </div>
 
                 {task.priority && (
                     <div
-                        className={`task-priority ${getPriorityClass(task.priority)}`}
+                        className="task-priority priority-configured"
+                        style={getPriorityStyle(task.priority_id)}
                     >
                         <span className="priority-dot"></span>
                         {task.priority}
@@ -171,38 +179,28 @@ function TaskCard({
 
             </div>
 
-
-            {/* Description */}
-
             {task.description && (
                 <p className="task-description">
                     {task.description}
                 </p>
             )}
 
-
-            {/* Task metadata */}
-
             <div className="task-meta">
 
                 {task.status && (
                     <div className="task-status">
-
                         <span className="meta-label">
                             Status
                         </span>
 
-                        <span className="status-value">
+                        <span className={`status-value ${statusClass}`}>
                             {task.status}
                         </span>
-
                     </div>
                 )}
 
-
                 {task.category && (
                     <div className="task-info">
-
                         <span className="meta-label">
                             Category
                         </span>
@@ -210,14 +208,11 @@ function TaskCard({
                         <span className="meta-value">
                             {task.category}
                         </span>
-
                     </div>
                 )}
 
-
                 {task.group && (
                     <div className="task-info">
-
                         <span className="meta-label">
                             Group
                         </span>
@@ -225,7 +220,6 @@ function TaskCard({
                         <span className="meta-value">
                             {task.group}
                         </span>
-
                     </div>
                 )}
 
@@ -234,6 +228,7 @@ function TaskCard({
                         <span className="meta-label">
                             Assigned to
                         </span>
+
                         <span className="meta-value">
                             You
                         </span>
@@ -245,6 +240,7 @@ function TaskCard({
                         <span className="meta-label">
                             Assigned to
                         </span>
+
                         <span className="meta-value">
                             {assignedMember.name}
                         </span>
@@ -252,9 +248,6 @@ function TaskCard({
                 )}
 
             </div>
-
-
-            {/* Bottom */}
 
             <div className="task-card-bottom">
 
@@ -276,34 +269,45 @@ function TaskCard({
 
                 </div>
 
-
                 <div className="task-actions">
 
-                    {/* Assignee actions — accept/complete their own task */}
-                    {isAssignee && !isCompleted && !isCancelled && (
+                    {/* Users get accept/decline before accepting and only
+                        complete after accepting. Admins use their own
+                        admin controls below, even when assigned to the task. */}
+                    {!admin && isAssignee && !isCompleted && !isCancelled && (
                         <>
-                            <button
-                                className="complete-button"
-                                onClick={handleAccept}
-                            >
-                                Accept
-                            </button>
+                            {!isAccepted ? (
+                                <>
+                                    <button
+                                        className="complete-button"
+                                        onClick={handleAccept}
+                                    >
+                                        Accept
+                                    </button>
 
-                            <button
-                                className="complete-button"
-                                onClick={handleComplete}
-                            >
-                                Complete
-                            </button>
+                                    <button
+                                        className="cancel-button"
+                                        onClick={handleDecline}
+                                    >
+                                        Decline
+                                    </button>
+                                </>
+                            ) : (
+                                <button
+                                    className="complete-button"
+                                    onClick={handleComplete}
+                                >
+                                    Complete
+                                </button>
+                            )}
                         </>
                     )}
 
-                    {/* Admin actions — full control over the task */}
+                    {/* Admin actions */}
                     {admin && (
                         <>
 
                             {!isCompleted && !isCancelled && members.length > 0 && (
-
                                 assigning ? (
                                     <select
                                         className="assign-select"
@@ -331,17 +335,13 @@ function TaskCard({
                                         className="secondary-button"
                                         onClick={() => setAssigning(true)}
                                     >
-                                        {assignedMember
-                                            ? `Reassign`
-                                            : "Assign to..."}
+                                        {assignedMember ? "Reassign" : "Assign to..."}
                                     </button>
                                 )
-
                             )}
 
                             {!isCompleted && !isCancelled && (
                                 <>
-
                                     {completedStatus && (
                                         <button
                                             className="complete-button"
@@ -367,19 +367,16 @@ function TaskCard({
                                             Cancel
                                         </button>
                                     )}
-
                                 </>
                             )}
-
 
                             <Link
                                 className="edit-button"
                                 to={`/tasks/${task.id}/edit`}
-                                state={{ task: task }}
+                                state={{ task }}
                             >
                                 Edit
                             </Link>
-
 
                             <button
                                 className="delete-button"
@@ -398,6 +395,5 @@ function TaskCard({
         </div>
     );
 }
-
 
 export default TaskCard;

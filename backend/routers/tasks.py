@@ -17,7 +17,9 @@ from crud.tasks import (
     get_all_categories,
     get_all_groups,
     assign_task,
-    get_task_assignee
+    get_task_assignee,
+    accept_task,
+    decline_task
 )
 from dependencies import get_current_user, require_workspace_role
 
@@ -30,19 +32,45 @@ def get_tasks(
     status_id: Optional[int] = None,
     priority_id: Optional[int] = None,
     category_id: Optional[int] = None,
-    group_id: Optional[int] = None
+    group_id: Optional[int] = None,
+    current_user: dict = Depends(get_current_user)
 ):
-    
+    from crud.users import get_workspace_role
+
+    if workspace_id is None:
+        raise HTTPException(
+            status_code=400,
+            detail="workspace_id is required"
+        )
+
+    role = get_workspace_role(workspace_id, current_user["id"])
+
+    if role is None:
+        raise HTTPException(
+            status_code=403,
+            detail="You are not a member of this workspace"
+        )
+
+    # Admins can see every task in the workspace.
+    # Regular users only see tasks assigned to them. This keeps unassigned
+    # and other users' tasks out of the user's task list at the API level.
+    assigned_to = None if role == "admin" else current_user["id"]
+
     return get_all_tasks(
         workspace_id,
-        status_id, 
-        priority_id, 
-        category_id, 
-        group_id
+        status_id,
+        priority_id,
+        category_id,
+        group_id,
+        assigned_to=assigned_to
     )
 
 @router.get("/tasks/{task_id}", response_model=TaskResponse)
-def get_task(task_id: int):
+def get_task(
+    task_id: int,
+    current_user: dict = Depends(get_current_user)
+):
+    from crud.users import get_workspace_role
 
     task = get_task_by_id(task_id)
 
@@ -50,6 +78,20 @@ def get_task(task_id: int):
         raise HTTPException(
             status_code=404,
             detail="Task not found"
+        )
+
+    role = get_workspace_role(task["workspace_id"], current_user["id"])
+
+    if role is None:
+        raise HTTPException(
+            status_code=403,
+            detail="You are not a member of this workspace"
+        )
+
+    if role != "admin" and task["assigned_to"] != current_user["id"]:
+        raise HTTPException(
+            status_code=403,
+            detail="You can only view tasks assigned to you"
         )
 
     return task
@@ -107,8 +149,8 @@ def patch_assign_task(
     return {"message": "Task assigned successfully"}
 
 
-# Accept — the assignee marks they've picked it up. Any workspace member
-# can be assigned a task, but only the assignee themselves can accept it.
+# Accept — only the assigned user can accept a task that has not
+# already been accepted.
 @router.post("/tasks/{task_id}/accept")
 def post_accept_task(
     task_id: int,
@@ -119,18 +161,21 @@ def post_accept_task(
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    assignee = get_task_assignee(task_id)
+    from crud.users import get_workspace_role
+    role = get_workspace_role(task["workspace_id"], current_user["id"])
 
-    if assignee != current_user["id"]:
+    if role != "user" or task["assigned_to"] != current_user["id"]:
         raise HTTPException(
             status_code=403,
-            detail="You can only accept tasks assigned to you"
+            detail="Only the assigned user can accept this task"
         )
 
-    # Move to whatever status represents active work — matched by name
-    # since there's no is_in_progress flag (mirrors is_completed/is_cancelled).
-    # Falls back to the first non-completed, non-cancelled status if this
-    # workspace doesn't use the label "In Progress".
+    if task["accepted_at"]:
+        raise HTTPException(
+            status_code=400,
+            detail="Task has already been accepted"
+        )
+
     statuses = get_all_statuses(task["workspace_id"])
 
     in_progress = next(
@@ -144,15 +189,23 @@ def post_accept_task(
     if in_progress is None:
         raise HTTPException(
             status_code=400,
-            detail="This workspace has no suitable status to move an accepted task into"
+            detail="This workspace has no suitable status for an accepted task"
+        )
+
+    # Record acceptance and move the task into an active status.
+    accepted = accept_task(task_id)
+
+    if not accepted:
+        raise HTTPException(
+            status_code=404,
+            detail="Task not found"
         )
 
     update_task(task_id, TaskUpdate(status_id=in_progress["id"]))
 
     return {"message": "Task accepted"}
 
-
-# Complete — same rule: only the assignee can mark it done.
+# Complete — only the assigned user can complete their accepted task.
 @router.post("/tasks/{task_id}/complete")
 def post_complete_task(
     task_id: int,
@@ -163,12 +216,19 @@ def post_complete_task(
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    assignee = get_task_assignee(task_id)
+    from crud.users import get_workspace_role
+    role = get_workspace_role(task["workspace_id"], current_user["id"])
 
-    if assignee != current_user["id"]:
+    if role != "user" or task["assigned_to"] != current_user["id"]:
         raise HTTPException(
             status_code=403,
-            detail="You can only complete tasks assigned to you"
+            detail="Only the assigned user can complete this task"
+        )
+
+    if not task["accepted_at"]:
+        raise HTTPException(
+            status_code=400,
+            detail="Accept the task before completing it"
         )
 
     completed_status = next(
@@ -186,12 +246,80 @@ def post_complete_task(
 
     return {"message": "Task marked complete"}
 
+
+# Decline — before acceptance, remove the assignment so the task returns
+# to the admin's unassigned task pool.
+@router.post("/tasks/{task_id}/decline")
+def post_decline_task(
+    task_id: int,
+    current_user: dict = Depends(get_current_user)
+):
+    task = get_task_by_id(task_id)
+
+    if task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    from crud.users import get_workspace_role
+    role = get_workspace_role(task["workspace_id"], current_user["id"])
+
+    if role != "user" or task["assigned_to"] != current_user["id"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Only the assigned user can decline this task"
+        )
+
+    if task["accepted_at"]:
+        raise HTTPException(
+            status_code=400,
+            detail="An accepted task cannot be declined"
+        )
+
+    # Return the task to the workspace's initial non-terminal status.
+    statuses = get_all_statuses(task["workspace_id"])
+    initial_status = next(
+        (s for s in statuses if not s["is_completed"] and not s["is_cancelled"]),
+        None
+    )
+
+    if initial_status is None:
+        raise HTTPException(
+            status_code=400,
+            detail="This workspace has no available non-terminal status"
+        )
+
+    declined = decline_task(task_id, initial_status["id"])
+
+    if not declined:
+        raise HTTPException(
+            status_code=404,
+            detail="Task not found"
+        )
+
+    return {"message": "Task declined"}
+
 # Update
 @router.patch("/tasks/{task_id}")
 def edit_task(
     task_id: int,
-    task_update: TaskUpdate
+    task_update: TaskUpdate,
+    current_user: dict = Depends(get_current_user)
 ):
+    from crud.users import get_workspace_role
+
+    task = get_task_by_id(task_id)
+
+    if task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    role = get_workspace_role(task["workspace_id"], current_user["id"])
+
+    # Regular users cannot edit task fields directly. Their task workflow
+    # is handled by the dedicated accept/decline/complete endpoints.
+    if role != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Only workspace admins can edit task details"
+        )
 
     updated = update_task(
         task_id,
@@ -212,7 +340,24 @@ def edit_task(
 
 # Delete
 @router.delete("/tasks/{task_id}")
-def remove_task(task_id: int):
+def remove_task(
+    task_id: int,
+    current_user: dict = Depends(get_current_user)
+):
+    from crud.users import get_workspace_role
+
+    task = get_task_by_id(task_id)
+
+    if task is None:
+        return {"message": "Task not found"}
+
+    role = get_workspace_role(task["workspace_id"], current_user["id"])
+
+    if role != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Only workspace admins can delete tasks"
+        )
 
     deleted = delete_task(task_id)
 

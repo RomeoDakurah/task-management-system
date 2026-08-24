@@ -67,7 +67,8 @@ def get_all_tasks(
     status_id=None,
     priority_id=None,
     category_id=None,
-    group_id=None
+    group_id=None,
+    assigned_to=None
 ):
 
     conn = get_connection()
@@ -84,6 +85,7 @@ def get_all_tasks(
             priorities.name AS priority,
             tasks.created_at,
             tasks.completed_at,
+            tasks.accepted_at,
             tasks.due_date,
             tasks.category_id,
             categories.name AS category,
@@ -132,6 +134,10 @@ def get_all_tasks(
         conditions.append("tasks.group_id = ?")
         values.append(group_id)
 
+    if assigned_to is not None:
+        conditions.append("tasks.assigned_to = ?")
+        values.append(assigned_to)
+
 
     query += " WHERE " + " AND ".join(conditions)
 
@@ -160,15 +166,16 @@ def get_all_tasks(
 
             "created_at": row[7],
             "completed_at": row[8],
-            "due_date": row[9],
+            "accepted_at": row[9],
+            "due_date": row[10],
 
-            "category_id": row[10],
-            "category": row[11],
+            "category_id": row[11],
+            "category": row[12],
 
-            "group_id": row[12],
-            "group": row[13],
-            "assigned_to": row[14],
-            "created_by": row[15]
+            "group_id": row[13],
+            "group": row[14],
+            "assigned_to": row[15],
+            "created_by": row[16]
         }
         for row in rows
     ]
@@ -190,6 +197,7 @@ def get_task_by_id(task_id):
             priorities.name AS priority,
             tasks.created_at,
             tasks.completed_at,
+            tasks.accepted_at,
             tasks.due_date,
             tasks.category_id,
             categories.name AS category,
@@ -235,14 +243,15 @@ def get_task_by_id(task_id):
         "priority": row[6],
         "created_at": row[7],
         "completed_at": row[8],
-        "due_date": row[9],
-        "category_id": row[10],
-        "category": row[11],
-        "group_id": row[12],
-        "group": row[13],
-        "workspace_id": row[14],
-        "assigned_to": row[15],
-        "created_by": row[16]
+        "accepted_at": row[9],
+        "due_date": row[10],
+        "category_id": row[11],
+        "category": row[12],
+        "group_id": row[13],
+        "group": row[14],
+        "workspace_id": row[15],
+        "assigned_to": row[16],
+        "created_by": row[17]
     }
 
 # Update
@@ -360,7 +369,9 @@ def assign_task(task_id, assigned_to):
     cursor.execute(
         """
         UPDATE tasks
-        SET assigned_to = ?
+        SET
+            assigned_to = ?,
+            accepted_at = NULL
         WHERE id = ?
         """,
         (assigned_to, task_id)
@@ -393,6 +404,62 @@ def get_task_assignee(task_id):
         return None
 
     return row[0]
+
+
+def accept_task(task_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        UPDATE tasks
+        SET accepted_at = datetime('now')
+        WHERE id = ?
+        """,
+        (task_id,)
+    )
+
+    conn.commit()
+    updated = cursor.rowcount
+    conn.close()
+
+    return updated > 0
+
+
+def decline_task(task_id, status_id=None):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    if status_id is None:
+        cursor.execute(
+            """
+            UPDATE tasks
+            SET
+                assigned_to = NULL,
+                accepted_at = NULL
+            WHERE id = ?
+            """,
+            (task_id,)
+        )
+    else:
+        cursor.execute(
+            """
+            UPDATE tasks
+            SET
+                assigned_to = NULL,
+                accepted_at = NULL,
+                status_id = ?,
+                completed_at = NULL
+            WHERE id = ?
+            """,
+            (status_id, task_id)
+        )
+
+    conn.commit()
+    updated = cursor.rowcount
+    conn.close()
+
+    return updated > 0
 
 
 # Delete

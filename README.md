@@ -41,7 +41,20 @@ The system is being developed incrementally, with an emphasis on understanding a
 * Track cancellation
 * Automatically record completion timestamps
 
-## Workspaces
+## Task Assignment & User Workflow
+
+Tasks can be assigned to workspace members.
+
+* Admins can assign, reassign, edit, complete, cancel, and delete tasks.
+* Regular users only see tasks assigned to them.
+* An assigned user can accept or decline a task.
+* Accepted tasks can then be completed by the assigned user.
+* Declining a task removes the assignment and returns it to the workspace's unassigned task pool.
+* Task acceptance is tracked separately from task status using `accepted_at`.
+
+The frontend provides separate user views for all assigned tasks, tasks awaiting acceptance, and accepted tasks.
+
+# Workspaces
 
 The application now supports multiple workspaces.
 

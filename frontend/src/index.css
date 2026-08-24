@@ -462,85 +462,40 @@ a {
 ======================================== */
 
 .task-priority {
-
   display: flex;
-
   align-items: center;
-
   gap: 6px;
-
   flex-shrink: 0;
-
   font-size: 12px;
-
   font-weight: 600;
-
 }
 
 .priority-dot {
-
   width: 7px;
-
   height: 7px;
-
   border-radius: 50%;
-
-  background: #9ca3af;
-
+  background: var(--priority-color, #9ca3af);
 }
 
-.priority-low {
-
-  color: #16a34a;
-
+/*
+   Priorities are workspace-configurable, so their names are deliberately
+   not used as CSS class names. The priority id selects a colour from a
+   repeating palette instead.
+*/
+.priority-configured {
+  --priority-index: 0;
+  color: hsl(calc(210 + (var(--priority-index) * 47)) 65% 45%);
 }
 
-.priority-low .priority-dot {
-
-  background: #22c55e;
-
+.priority-configured .priority-dot {
+  background: hsl(calc(210 + (var(--priority-index) * 47)) 65% 50%);
 }
-
-.priority-normal {
-
-  color: #6b7280;
-
-}
-
-.priority-normal .priority-dot {
-
-  background: #9ca3af;
-
-}
-
-.priority-high {
-
-  color: #ea580c;
-
-}
-
-.priority-high .priority-dot {
-
-  background: #f97316;
-
-}
-
-.priority-urgent {
-
-  color: #dc2626;
-
-}
-
-.priority-urgent .priority-dot {
-
-  background: #ef4444;
-
-}
-
 
 /* ========================================
    DESCRIPTION
 ======================================== */
+
+
 
 .task-description {
 
@@ -599,19 +554,29 @@ a {
 }
 
 .status-value {
-
   padding: 5px 10px;
-
   border-radius: 7px;
-
   background: #eff6ff;
-
   color: #2563eb;
-
   font-size: 12px;
-
   font-weight: 600;
+}
 
+/* Status names are configurable. Completion/cancellation colours are
+   determined from the status flags rather than the status name. */
+.status-value.status-completed {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.status-value.status-cancelled {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.status-value.status-default {
+  background: #eff6ff;
+  color: #2563eb;
 }
 
 

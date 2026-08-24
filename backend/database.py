@@ -66,6 +66,7 @@ def create_tables():
         priority_id INTEGER NOT NULL,
         created_at TEXT NOT NULL,
         completed_at TEXT,
+        accepted_at TEXT,
         due_date TEXT,
 
         category_id INTEGER,

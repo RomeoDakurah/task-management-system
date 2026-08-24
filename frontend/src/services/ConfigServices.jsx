@@ -16,6 +16,12 @@ export async function createWorkspace(name, type) {
     });
 }
 
+export async function deleteWorkspace(workspaceId) {
+    return apiFetch(`/workspaces/${workspaceId}`, {
+        method: "DELETE"
+    });
+}
+
 // Admin only
 export async function getWorkspaceMembers(workspaceId) {
     return apiFetch(`/workspaces/${workspaceId}/members`);
