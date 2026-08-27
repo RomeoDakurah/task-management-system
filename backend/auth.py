@@ -4,24 +4,12 @@ Auth primitives: password hashing + JWT issue/verify.
 Requires: pip install bcrypt pyjwt
 """
 import os
-import sys
 import bcrypt
 import jwt
 from datetime import datetime, timedelta, timezone
 
 # In production, set this via an environment variable and never commit it.
-_DEV_DEFAULT_SECRET = "dev-secret-change-me"
-SECRET_KEY = os.environ.get("TASKFLOW_SECRET_KEY", _DEV_DEFAULT_SECRET)
-
-# Fail loudly rather than silently signing tokens with a well-known key.
-# ENVIRONMENT should be set to "production" in the Azure App Service
-# configuration (Application settings), alongside a real TASKFLOW_SECRET_KEY.
-if SECRET_KEY == _DEV_DEFAULT_SECRET and os.environ.get("ENVIRONMENT") == "production":
-    sys.exit(
-        "TASKFLOW_SECRET_KEY is not set. Refusing to start in production "
-        "with the default development secret key."
-    )
-
+SECRET_KEY = os.environ.get("TASKFLOW_SECRET_KEY", "dev-secret-change-me")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 

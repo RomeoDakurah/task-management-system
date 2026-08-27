@@ -865,23 +865,11 @@ source .venv/bin/activate
 Install dependencies:
 
 ```bash
-pip install -r requirements.txt
+pip install fastapi uvicorn
 ```
-
-Set up the database — this creates `database.db` from scratch and
-fills it with demo data (4 workspaces, a roster of users, and a
-realistic mix of tasks). It's the only setup script you need, and it's
-safe to re-run any time (e.g. after `database.db` is deleted, or isn't
-included when you zip/export the project) — it always rebuilds the
-same demo state from nothing:
-
 ```bash
-python seed.py
+pip install bcrypt pyjwt
 ```
-
-All seeded accounts share the password `Password123!` — the script
-prints the full list of emails/roles when it finishes. These are demo
-accounts only; remove or replace them before this is ever public.
 
 Start the FastAPI development server:
 
