@@ -25,12 +25,16 @@ class TaskResponse(BaseModel):
     id: int
     title: str
     description: str
+    status_id: int
     status: str
+    priority_id: int
     priority: str
     created_at: str
     completed_at: Optional[str] = None
     accepted_at: Optional[str] = None
+    category_id: Optional[int] = None
     category: Optional[str] = None
+    group_id: Optional[int] = None
     group: Optional[str] = None
     due_date: Optional[str] = None
     assigned_to: Optional[int] = None

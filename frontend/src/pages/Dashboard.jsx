@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getTasks } from "../services/TaskServices";
+import { getStatuses } from "../services/ConfigServices";
 import WorkspaceSelector from "../components/WorkspaceSelector";
 import { useAuth } from "../context/useAuth";
 
@@ -10,11 +11,17 @@ function Dashboard({ workspaceId, setWorkspaceId }) {
     const admin = isAdminIn(workspaceId);
 
     const [tasks, setTasks] = useState([]);
+    const [statuses, setStatuses] = useState([]);
     const [error, setError] = useState(null);
+
+    // ========================================
+    // Load tasks
+    // ========================================
 
     useEffect(() => {
 
         if (!workspaceId) {
+            setTasks([]);
             return;
         }
 
@@ -35,7 +42,46 @@ function Dashboard({ workspaceId, setWorkspaceId }) {
 
         loadTasks();
 
-    }, [workspaceId, {}]);
+    }, [workspaceId]);
+
+
+    // ========================================
+    // Load this workspace's status configuration.
+    //
+    // Every workspace defines its own statuses (Personal might use
+    // Open/In Progress/Closed/Cancelled, a support desk might use
+    // New/Blocked/Resolved, a classroom might use Not Started/
+    // Submitted/Graded). Statuses aren't identified by name — only
+    // `is_completed` / `is_cancelled` are meaningful across workspaces
+    // — so the dashboard has to load the real configuration rather
+    // than assuming any particular status names exist.
+    // ========================================
+
+    useEffect(() => {
+
+        if (!workspaceId) {
+            setStatuses([]);
+            return;
+        }
+
+        async function loadStatuses() {
+
+            try {
+
+                const data = await getStatuses(workspaceId);
+
+                setStatuses(data);
+
+            } catch (error) {
+
+                setError(error.message);
+
+            }
+        }
+
+        loadStatuses();
+
+    }, [workspaceId]);
 
     if (error) {
         return <p>Error: {error}</p>;
@@ -43,21 +89,34 @@ function Dashboard({ workspaceId, setWorkspaceId }) {
 
     const totalTasks = tasks.length;
 
-    const openTasks = tasks.filter(
-        (task) => task.status === "Open"
-    ).length;
+    const completedStatusIds = new Set(
+        statuses.filter((status) => status.is_completed).map((status) => status.id)
+    );
 
-    const inProgressTasks = tasks.filter(
-        (task) => task.status === "In Progress"
-    ).length;
+    const cancelledStatusIds = new Set(
+        statuses.filter((status) => status.is_cancelled).map((status) => status.id)
+    );
 
     const completedTasks = tasks.filter(
-        (task) => task.status === "Completed"
+        (task) => completedStatusIds.has(task.status_id)
     ).length;
 
     const cancelledTasks = tasks.filter(
-        (task) => task.status === "Cancelled"
+        (task) => cancelledStatusIds.has(task.status_id)
     ).length;
+
+    // "Active" is everything that isn't flagged completed or
+    // cancelled — this covers whatever in-between statuses a given
+    // workspace happens to define (In Progress, Blocked, Under
+    // Review, Submitted, ...) without needing to know their names.
+    const activeTasks = totalTasks - completedTasks - cancelledTasks;
+
+    // Per-status counts, in the order the workspace configured them,
+    // for the breakdown chart further down the page.
+    const statusCounts = statuses.map((status) => ({
+        ...status,
+        count: tasks.filter((task) => task.status_id === status.id).length
+    }));
 
     const recentTasks = [...tasks]
         .sort((a, b) => b.id - a.id)
@@ -120,24 +179,11 @@ function Dashboard({ workspaceId, setWorkspaceId }) {
                 <div className="stat-card">
 
                     <span className="stat-label">
-                        Open
+                        Active
                     </span>
 
                     <span className="stat-value">
-                        {openTasks}
-                    </span>
-
-                </div>
-
-
-                <div className="stat-card">
-
-                    <span className="stat-label">
-                        In Progress
-                    </span>
-
-                    <span className="stat-value">
-                        {inProgressTasks}
+                        {activeTasks}
                     </span>
 
                 </div>
@@ -149,8 +195,21 @@ function Dashboard({ workspaceId, setWorkspaceId }) {
                         Completed
                     </span>
 
-                    <span className="stat-value">
+                    <span className="stat-value status-completed">
                         {completedTasks}
+                    </span>
+
+                </div>
+
+
+                <div className="stat-card">
+
+                    <span className="stat-label">
+                        Cancelled
+                    </span>
+
+                    <span className="stat-value status-cancelled">
+                        {cancelledTasks}
                     </span>
 
                 </div>
@@ -276,7 +335,7 @@ function Dashboard({ workspaceId, setWorkspaceId }) {
                         </h2>
 
                         <p>
-                            Current distribution of your tasks.
+                            Current distribution across this workspace's statuses.
                         </p>
 
                     </div>
@@ -284,33 +343,35 @@ function Dashboard({ workspaceId, setWorkspaceId }) {
                 </div>
 
 
-                <div className="status-overview">
+                {statusCounts.length === 0 ? (
 
-                    <StatusBar
-                        label="Open"
-                        count={openTasks}
-                        total={totalTasks}
-                    />
+                    <p className="dashboard-empty-inline">
+                        This workspace has no statuses configured yet.
+                    </p>
 
-                    <StatusBar
-                        label="In Progress"
-                        count={inProgressTasks}
-                        total={totalTasks}
-                    />
+                ) : (
 
-                    <StatusBar
-                        label="Completed"
-                        count={completedTasks}
-                        total={totalTasks}
-                    />
+                    <div className="status-overview">
 
-                    <StatusBar
-                        label="Cancelled"
-                        count={cancelledTasks}
-                        total={totalTasks}
-                    />
+                        {statusCounts.map((status) => (
+                            <StatusBar
+                                key={status.id}
+                                label={status.name}
+                                count={status.count}
+                                total={totalTasks}
+                                variant={
+                                    status.is_completed
+                                        ? "completed"
+                                        : status.is_cancelled
+                                            ? "cancelled"
+                                            : "default"
+                                }
+                            />
+                        ))}
 
-                </div>
+                    </div>
+
+                )}
 
             </div>
 
@@ -319,7 +380,7 @@ function Dashboard({ workspaceId, setWorkspaceId }) {
 }
 
 
-function StatusBar({ label, count, total }) {
+function StatusBar({ label, count, total, variant = "default" }) {
 
     const percentage =
         total > 0
@@ -345,7 +406,7 @@ function StatusBar({ label, count, total }) {
             <div className="status-bar">
 
                 <div
-                    className="status-bar-fill"
+                    className={`status-bar-fill status-bar-fill-${variant}`}
                     style={{
                         width: `${percentage}%`
                     }}

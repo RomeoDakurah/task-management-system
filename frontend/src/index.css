@@ -1091,6 +1091,18 @@ a {
   font-weight: 700;
 }
 
+/* Dashboard stat cards for completed/cancelled counts reuse the same
+   green/red used for status badges elsewhere, so the numbers read as
+   good/bad at a glance regardless of what a workspace calls its
+   underlying statuses. */
+.stat-value.status-completed {
+  color: #15803d;
+}
+
+.stat-value.status-cancelled {
+  color: #b91c1c;
+}
+
 .dashboard-section {
   padding: 24px;
   margin-bottom: 24px;
@@ -1230,6 +1242,18 @@ a {
   transition: width 0.3s ease;
 }
 
+/* Same completed/cancelled colour convention as the status badges and
+   stat cards, applied per-status rather than assuming any particular
+   status name (a workspace's completed status might be called
+   "Completed", "Resolved", "Graded", or anything else). */
+.status-bar-fill-completed {
+  background: #22c55e;
+}
+
+.status-bar-fill-cancelled {
+  background: #ef4444;
+}
+
 .dashboard-empty {
   padding: 40px 20px;
 
@@ -1247,6 +1271,12 @@ a {
 .dashboard-empty p {
   margin: 0 0 20px;
 
+  color: #6b7280;
+
+  font-size: 14px;
+}
+
+.dashboard-empty-inline {
   color: #6b7280;
 
   font-size: 14px;

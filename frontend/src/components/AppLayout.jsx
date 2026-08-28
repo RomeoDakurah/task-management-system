@@ -87,7 +87,7 @@ function AppLayout({ workspaceId }) {
                     to="/settings"
                     className="nav-link"
                 >
-                    Settings
+                    ⚙ Settings
                 </NavLink>
 
             </div>

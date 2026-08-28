@@ -10,7 +10,10 @@ import jwt
 from datetime import datetime, timedelta, timezone
 
 # In production, set this via an environment variable and never commit it.
-_DEV_DEFAULT_SECRET = "dev-secret-change-me"
+# Padded to 32+ bytes so PyJWT doesn't warn about a short HMAC key even
+# in local dev — this is still a well-known, public value; it's not a
+# substitute for setting TASKFLOW_SECRET_KEY.
+_DEV_DEFAULT_SECRET = "dev-secret-change-me-before-deploying-anywhere-real"
 SECRET_KEY = os.environ.get("TASKFLOW_SECRET_KEY", _DEV_DEFAULT_SECRET)
 
 # Fail loudly rather than silently signing tokens with a well-known key.

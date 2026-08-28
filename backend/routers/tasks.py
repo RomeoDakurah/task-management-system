@@ -12,10 +12,6 @@ from crud.tasks import (
     update_task,
     delete_task,
     get_task_by_id,
-    get_all_statuses,
-    get_all_priorities,
-    get_all_categories,
-    get_all_groups,
     assign_task,
     get_task_assignee,
     accept_task,
@@ -369,23 +365,3 @@ def remove_task(
     return {
         "message": "Task deleted successfully"
     }
-
-# status
-@router.get("/workspaces/{workspace_id}/statuses")
-def get_statuses(workspace_id: int):
-    return get_all_statuses(workspace_id)
-
-# priorities
-@router.get("/workspaces/{workspace_id}/priorities")
-def get_priorities(workspace_id: int):
-    return get_all_priorities(workspace_id)
-
-# categories
-@router.get("/workspaces/{workspace_id}/categories")
-def get_categories(workspace_id: int):
-    return get_all_categories(workspace_id)
-
-# groups
-@router.get("/workspaces/{workspace_id}/groups")
-def get_groups(workspace_id: int):
-    return get_all_groups(workspace_id)
