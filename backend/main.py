@@ -1,9 +1,11 @@
 import os
 from fastapi import FastAPI
 from routers import tasks, config, auth, workspaces
+from database import create_tables
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+create_tables()
 
 # Allowed origins come from an env var so the same image/deployment can be
 # pointed at different frontends (local dev vs. the Azure Static Web App /
