@@ -11,7 +11,12 @@ create_tables()
 # pointed at different frontends (local dev vs. the Azure Static Web App /
 # App Service URL) without a code change. Falls back to the Vite dev
 # server so local development keeps working unmodified.
-_default_origins = "http://localhost:5173,http://127.0.0.1:5173"
+_default_origins = (
+    "http://localhost:5173,"
+    "http://127.0.0.1:5173,"
+    "https://witty-island-07ad2100f.5.azurestaticapps.net"
+)
+
 allowed_origins = [
     origin.strip()
     for origin in os.environ.get("CORS_ALLOWED_ORIGINS", _default_origins).split(",")
